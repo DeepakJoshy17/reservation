@@ -1,0 +1,139 @@
+function downloadPDF($user_email, $user_name, $boat_name, $schedule_details, $seat_numbers, $arrival_time, $total_amount, $system_date, $qrImageData, $booking_ids) {
+    $mpdf = new \Mpdf\Mpdf([
+        'mode' => 'utf-8',
+        'format' => 'A5',
+        'default_font_size' => 13,
+        'default_font' => 'Arial',
+        'margin_left' => 5,
+        'margin_right' => 5,
+        'margin_top' => 5,
+        'margin_bottom' => 0,
+        'margin_header' => 0,
+        'margin_footer' => 0
+    ]);
+
+    // Include CSS styles
+    $css = '
+    body {
+        font-family: Arial, sans-serif;
+        color: #000;
+        background-color: #f5f5f5;
+        margin: 0; 
+        padding: 0; 
+    }
+    .ticket-container {
+        width: 100%; 
+        background-color: #ffffff; 
+        border-radius: 10px; 
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2); 
+        padding: 10px; 
+        border: 2px solid #6c757d; 
+        box-sizing: border-box; 
+    }
+    .ticket-header {
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 5px;
+    }
+    .ticket-header h2 {
+        color: #3377AA; 
+        font-weight: bold;
+        font-size: 1.2em; 
+        margin: 0; 
+    }
+    .ticket-header p {
+        font-size: 0.8em; 
+        color: #6c757d; 
+        margin: 0; 
+    }
+    .ticket-details {
+        margin-bottom: 10px; 
+    }
+    .ticket-details h4 {
+        color: #3377AA; 
+        margin: 5px 0; 
+        font-weight: bold; 
+        border-bottom: 1px solid #3377AA; 
+        padding-bottom: 2px; 
+        font-size: 0.9em; 
+    }
+    .ticket-details p {
+        margin: 2px 0; 
+        color: #000; 
+        font-size: 0.8em; 
+    }
+    .qr-code {
+        text-align: center;
+        margin: 5px 0; 
+        padding: 5px; 
+        background-color: #f8f9fa; 
+        border-radius: 10px; 
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); 
+    }
+    .qr-code img {
+        width: 80px; 
+        height: 80px; 
+    }
+    .footer {
+        text-align: center;
+        margin-top: 5px; 
+        font-size: 0.7em; 
+        color: #666;
+    }
+    ';
+    // Write the CSS to the PDF
+    $mpdf->WriteHTML($css, \Mpdf\HTMLParserMode::HEADER_CSS);
+
+    ob_start();
+    ?>
+    <div class="ticket-container">
+        <div class="ticket-header">
+            <h2>Waterway Reservation</h2>
+            <p>Your Journey Awaits!</p>
+        </div>
+
+        <div class="ticket-details">
+            <h4>User Details</h4>
+            <p><strong>Name:</strong> <?= htmlspecialchars($user_name) ?></p>
+            <p><strong>Email:</strong> <?= htmlspecialchars($user_email) ?></p>
+        </div>
+
+        <div class="ticket-details">
+            <h4>Booking Details</h4>
+            <p><strong>Boat Name:</strong> <?= htmlspecialchars($boat_name) ?></p>
+            <p><strong>Schedule:</strong> <?= htmlspecialchars($schedule_details) ?></p>
+            <p><strong>Seat Numbers:</strong> <?= htmlspecialchars($seat_numbers) ?></p>
+            <p><strong>Arrival Time:</strong> <?= htmlspecialchars($arrival_time) ?></p>
+            <p><strong>Total Amount:</strong> ₹<?= htmlspecialchars($total_amount) ?></p>
+            <p><strong>Booking ID(s):</strong> 
+                <?php
+                $alphabetic_ids = array_map('numberToAlphabetic', $booking_ids);
+                echo htmlspecialchars(implode(', ', $alphabetic_ids));
+                ?>
+            </p>
+            <p><strong>Booking Date:</strong> <?= htmlspecialchars($system_date) ?></p>
+        </div>
+        
+        <div class="qr-code">
+            <img src="data:image/png;base64,<?= base64_encode($qrImageData) ?>" alt="QR Code">
+        </div>
+        
+        <div class="footer">
+            Thank you for choosing Waterway Reservations!
+        </div>
+    </div>
+    <?php
+    $html = ob_get_contents();
+    ob_end_clean();
+
+    // Write the HTML to the PDF
+    $mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
+
+    // Output the PDF to download
+    $mpdf->Output('boat_ticket_' . $ticket_id . '.pdf', \Mpdf\Output\Destination::DOWNLOAD);
+}
+// Check if the user clicked to download the PDF
+if (isset($_GET['action']) && $_GET['action'] === 'download_pdf') {
+    downloadPDF($user_email, $user_name, $boat_name, $schedule_details, $seat_numbers, $arrival_time, $total_amount, $system_date, $qrImageData, $booking_ids);
+    echo "<script>alert('Your ticket has been downloaded.');</script>";
+}

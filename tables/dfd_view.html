@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boat Reservation System DFDs</title>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({startOnLoad: true, theme: 'default', themeVariables: {background: '#ffffff', primaryColor: '#000000', edgeLabelBackground: '#ffffff', edgeLabelColor: '#000000', textColor: '#000000'}});
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #ffffff;
+            color: #000000;
+            margin: 0;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #000000;
+        }
+        .mermaid {
+            background-color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Boat Reservation System Data Flow Diagrams</h1>
+
+<h2>Level 0 DFD</h2>
+<div class="mermaid">
+    graph TD;
+        PASSENGER((PASSENGER)) -->|Requests| BOAT_RESERVATION_SYSTEM(BOAT RESERVATION SYSTEM);
+        ADMIN((ADMIN)) -->|Manages| BOAT_RESERVATION_SYSTEM;
+        SWTD((State Water Transport Department)) -->|Regulates| BOAT_RESERVATION_SYSTEM;
+        BOAT_RESERVATION_SYSTEM -->|Saves| Reservation((Reservation));
+        BOAT_RESERVATION_SYSTEM -->|Saves| Cancellation((Cancellation));
+        BOAT_RESERVATION_SYSTEM -->|Saves| Boat_Info((Boat Info));
+        BOAT_RESERVATION_SYSTEM -->|Saves| Passenger_Info((Passenger Info));
+        BOAT_RESERVATION_SYSTEM -->|Saves| Ticket_Info((Ticket Info));
+        BOAT_RESERVATION_SYSTEM -->|Saves| Scheduling((Scheduling));
+        BOAT_RESERVATION_SYSTEM -->|Tracks| Location_Tracking((Location Tracking));
+</div>
+
+<h2>Level 1 DFD</h2>
+<div class="mermaid">
+    graph TD;
+        subgraph Availability_Check[Check Availability]
+            A1(Check availability of Boat) -->|Requests| SWTD_SERVER((SWTD SERVER));
+            A2(Check availability of Seats) -->|Requests| SWTD_SERVER;
+        end
+        BOAT_RESERVATION_SYSTEM --> A1;
+        BOAT_RESERVATION_SYSTEM --> A2;
+        SWTD_SERVER -->|Results| A1;
+        SWTD_SERVER -->|Results| A2;
+</div>
+
+<h2>Level 1 DFD (Core Functional Modules)</h2>
+<div class="mermaid">
+    graph TD;
+        Online_Boat_Reservation_System(Online Boat Reservation System) --> Boat_Management((Boat Management));
+        Online_Boat_Reservation_System --> Booking_Management((Booking Management));
+        Online_Boat_Reservation_System --> Ticket_Management((Ticket Management));
+        Online_Boat_Reservation_System --> Schedule_Management((Schedule Management));
+        Online_Boat_Reservation_System --> Payment_Management((Payment Management));
+        Online_Boat_Reservation_System --> Location_Management((Location Management));
+        Boat_Management -->|Generates| Reports((Reports));
+        Booking_Management -->|Generates| Reports;
+        Ticket_Management -->|Generates| Reports;
+        Schedule_Management -->|Generates| Reports;
+        Payment_Management -->|Generates| Reports;
+        Location_Management -->|Generates| Reports;
+</div>
+
+<h2>Booking Management Module DFD</h2>
+<div class="mermaid">
+    graph TD;
+        USER((USER)) -->|Applies for| Cancellation((Apply for Cancellation));
+        Cancellation -->|Confirms| Confirm_Cancellation((Confirm Cancellation));
+        USER -->|Applies for| Ticket((Apply for Ticket));
+        Ticket -->|Confirms| Confirm_Ticket((Confirm Ticket));
+        USER -->|Checks| Status((Check Status));
+        USER -->|Makes| Payment((Payment));
+        SWTD_SERVER -->|Processes| DATABASE((DATABASE));
+</div>
+
+<h2>Ticket Management Module DFD</h2>
+<div class="mermaid">
+    graph TD;
+        USER((USER)) -->|Checks| Availability((Check Availability));
+        Availability -->|Books| Ticket((Book Ticket));
+        Ticket -->|Generates| Ticket_Details((Generate Ticket Details));
+        Ticket -->|Generates| QR_Code((Generate QR Code));
+        SWTD_SERVER -->|Processes| Ticket_DB((Ticket DB));
+        Payment_Module((Payment Module)) -->|Receives| USER;
+</div>
+
+<h2>Schedule Management Module DFD</h2>
+<div class="mermaid">
+    graph TD;
+        USER((USER)) -->|Requests| Schedule((Request Schedule));
+        Schedule -->|Checks| Old_Schedule_vs_New_Schedule((Check Old Schedule vs New Schedule));
+        Schedule -->|Updates| Update_Schedule((Update Schedule));
+        SWTD_SERVER -->|Processes| SCHEDULE_TABLE((SCHEDULE TABLE));
+</div>
+
+<h2>Payment Management Module DFD</h2>
+<div class="mermaid">
+    graph TD;
+        USER((USER)) -->|Uses| Payment_Gateway((Payment Gateway));
+        Payment_Gateway -->|Processes| UPI((UPI));
+        Payment_Gateway -->|Processes| NET_BANKING((NET BANKING));
+        Payment_Gateway -->|Processes| E_WALLET((E-WALLET));
+        Payment_Gateway -->|Sends| Notifications((Transaction Notifications));
+</div>
+
+<h2>Level 2 DFD</h2>
+<div class="mermaid">
+    graph TD;
+        ADMIN((ADMIN)) -->|Manages| Manage_Modules((Manage Modules));
+        USER((USER)) -->|Interacts with| Manage_Modules;
+        Manage_Modules -->|Accesses| Various_Data_Stores((Various data stores));
+</div>
+
+</body>
+</html>

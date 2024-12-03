@@ -1,0 +1,281 @@
+<?php include 'headeradmin.php'; ?>
+<?php include 'sidebar.php'; ?>
+<?php 
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+if (!isset($_SESSION['admin_id'])) {
+    header("Location: admindashboard.php");
+    exit;
+}
+
+include 'db_connection.php';
+
+// Fetch boats and routes for form dropdowns
+$boats = get_boats();
+$routes = get_routes();
+
+function get_boats() {
+    global $conn;
+    $query = "SELECT * FROM Boats";
+    $result = $conn->query($query);
+    return $result->fetch_all(MYSQLI_ASSOC);
+}
+
+function get_routes() {
+    global $conn;
+    $query = "SELECT * FROM Routes";
+    $result = $conn->query($query);
+    return $result->fetch_all(MYSQLI_ASSOC);
+}
+
+function get_schedules($boat_id = null, $route_id = null) {
+    global $conn;
+    $query = "SELECT * FROM Schedules";
+    $conditions = [];
+
+    if ($boat_id) {
+        $conditions[] = "boat_id = " . intval($boat_id);
+    }
+    if ($route_id) {
+        $conditions[] = "route_id = " . intval($route_id);
+    }
+    if (!empty($conditions)) {
+        $query .= " WHERE " . implode(" AND ", $conditions);
+    }
+    return $conn->query($query)->fetch_all(MYSQLI_ASSOC);
+}
+
+if (isset($_POST['search_schedules'])) {
+    $boat_id = !empty($_POST['boat_id']) ? $_POST['boat_id'] : null;
+    $route_id = !empty($_POST['route_id']) ? $_POST['route_id'] : null;
+    $schedules = get_schedules($boat_id, $route_id);
+}
+?>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('#addScheduleForm').on('submit', function(e) {
+        e.preventDefault();
+        const isRecurring = $('#schedule_type').val() === 'recurring';
+        $.ajax({
+            type: 'POST',
+            url: 'manage_schedules_action.php',
+            data: $(this).serialize() + '&action=add' + '&recurring=' + (isRecurring ? '1' : '0'),
+            success: function(response) {
+                $('#message').html(response);
+                $('#addScheduleForm')[0].reset();
+                $('#searchSchedulesForm').submit();
+            }
+        });
+    });
+
+    $('#searchSchedulesForm').on('submit', function(e) {
+        e.preventDefault();
+        $.ajax({
+            type: 'POST',
+            url: 'manage_schedules.php',
+            data: $(this).serialize(),
+            success: function(response) {
+                $('#schedulesTable').html($(response).find('#schedulesTable').html());
+            }
+        });
+    });
+});
+</script>
+
+<div class="content-wrapper">
+    <div class="container mt-5">
+    <h1>Manage Schedules</h1>
+    <div id="message"></div>
+    
+    <!-- Add Schedule Form -->
+    <form id="addScheduleForm">
+        <div class="form-group">
+            <label for="schedule_type">Schedule Type:</label>
+            <select id="schedule_type" name="schedule_type" class="form-select" required>
+                <option value="single">Single Day</option>
+                <option value="recurring">Recurring (365 Days)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="boat_id">Boat:</label>
+            <select id="boat_id" name="boat_id" class="form-select" required>
+                <option value="">Select Boat</option>
+                <?php foreach ($boats as $boat): ?>
+                    <option value="<?php echo $boat['boat_id']; ?>"><?php echo $boat['boat_name']; ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="route_id">Route:</label>
+            <select id="route_id" name="route_id" class="form-select" required>
+                <option value="">Select Route</option>
+                <?php foreach ($routes as $route): ?>
+                    <option value="<?php echo $route['route_id']; ?>"><?php echo $route['route_name']; ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="departure_time">Departure Time:</label>
+            <input type="datetime-local" id="departure_time" name="departure_time" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="arrival_time">Arrival Time:</label>
+            <input type="datetime-local" id="arrival_time" name="arrival_time" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="status">Status:</label>
+            <select id="status" name="status" class="form-select" required>
+                <option value="Scheduled">Scheduled</option>
+                <option value="Unscheduled">Unscheduled</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Add Schedule</button>
+    </form>
+
+    <!-- Search Schedules Form -->
+    <form id="searchSchedulesForm" method="post">
+        <div class="form-group">
+            <label for="boat_id_search">Boat:</label>
+            <select id="boat_id_search" name="boat_id" class="form-select">
+                <option value="">All Boats</option>
+                <?php foreach ($boats as $boat): ?>
+                    <option value="<?php echo $boat['boat_id']; ?>"><?php echo $boat['boat_name']; ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="route_id_search">Route:</label>
+            <select id="route_id_search" name="route_id" class="form-select">
+                <option value="">All Routes</option>
+                <?php foreach ($routes as $route): ?>
+                    <option value="<?php echo $route['route_id']; ?>"><?php echo $route['route_name']; ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <button type="submit" name="search_schedules" class="btn btn-secondary">Search Schedules</button>
+    </form>
+
+    <div id="schedulesTable">
+        <table class="table mt-4">
+            <thead>
+                <tr>
+                    <th>Boat</th>
+                    <th>Route</th>
+                    <th>Departure</th>
+                    <th>Arrival</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (isset($schedules) && !empty($schedules)): ?>
+                    <?php foreach ($schedules as $schedule): ?>
+                        <tr>
+                            <td><?php echo $schedule['boat_id']; ?></td>
+                            <td><?php echo $schedule['route_id']; ?></td>
+                            <td><?php echo $schedule['departure_time']; ?></td>
+                            <td><?php echo $schedule['arrival_time']; ?></td>
+                            <td><?php echo $schedule['status']; ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr><td colspan="5">No schedules found.</td></tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+                </div>
+<?php include 'footer.php'; ?>
+<?php
+session_start();
+include 'db_connection.php';
+
+if (!isset($_SESSION['admin_id'])) {
+    echo "You must be logged in to perform this action.";
+    exit;
+}
+
+$action = $_POST['action'] ?? '';
+
+switch ($action) {
+    case 'add':
+        add_schedule();
+        break;
+    case 'edit':
+        edit_schedule();
+        break;
+    case 'remove':
+        remove_schedule();
+        break;
+}
+
+function add_schedule() {
+    global $conn;
+    $boat_id = $_POST['boat_id'];
+    $route_id = $_POST['route_id'];
+    $departure_time = $_POST['departure_time'];
+    $arrival_time = $_POST['arrival_time'];
+    $status = $_POST['status'];
+    $recurring = $_POST['recurring'] == '1';
+    
+    if (!in_array($status, ['Scheduled', 'Unscheduled'])) {
+        echo "Invalid status.";
+        return;
+    }
+
+    $start_date = new DateTime($departure_time);
+    for ($i = 0; $i < ($recurring ? 365 : 1); $i++) {
+        $departure = $start_date->format('Y-m-d H:i:s');
+        $arrival = (new DateTime($arrival_time))->modify("+$i day")->format('Y-m-d H:i:s');
+        
+        $query = "INSERT INTO Schedules (boat_id, route_id, departure_time, arrival_time, status) 
+                  VALUES (?, ?, ?, ?, ?)";
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("iisss", $boat_id, $route_id, $departure, $arrival, $status);
+
+        if (!$stmt->execute()) {
+            echo "Error adding schedule: " . $stmt->error;
+            return;
+        }
+        $start_date->modify('+1 day');
+    }
+    echo "Schedule(s) added successfully.";
+}
+
+function edit_schedule() {
+    global $conn;
+    $schedule_id = $_POST['schedule_id'];
+    $boat_id = $_POST['boat_id'];
+    $route_id = $_POST['route_id'];
+    $departure_time = $_POST['departure_time'];
+    $arrival_time = $_POST['arrival_time'];
+    $status = $_POST['status'];
+    
+    $query = "UPDATE Schedules SET boat_id=?, route_id=?, departure_time=?, arrival_time=?, status=? WHERE schedule_id=?";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("iisssi", $boat_id, $route_id, $departure_time, $arrival_time, $status, $schedule_id);
+
+    if ($stmt->execute()) {
+        echo "Schedule updated successfully.";
+    } else {
+        echo "Error updating schedule: " . $stmt->error;
+    }
+}
+
+function remove_schedule() {
+    global $conn;
+    $schedule_id = $_POST['schedule_id'];
+    $query = "DELETE FROM Schedules WHERE schedule_id=?";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("i", $schedule_id);
+
+    if ($stmt->execute()) {
+        echo "Schedule removed successfully.";
+    } else {
+        echo "Error removing schedule: " . $stmt->error;
+    }
+}
+?>

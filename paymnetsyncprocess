@@ -1,0 +1,198 @@
+<?php
+session_start(); // Ensure session is started
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// Check if payment is already done
+if (isset($_SESSION['payment_done']) && $_SESSION['payment_done']) {
+    // If payment is already completed, redirect to a confirmation page
+    header('Location: payment_confirmation.php');
+    exit();
+}
+
+include 'db_connection.php';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $boat_id = $_POST['boat_id'];
+    $schedule_id = $_POST['schedule_id'];
+    $user_id = $_POST['user_id'];
+    $selected_seats = $_POST['selected_seats'];
+    $start_stop_id = $_POST['start_stop_id'];
+    $end_stop_id = $_POST['end_stop_id'];
+    $seat_ids = explode(',', $selected_seats);
+
+    // Fetch user details from the Users table
+    $user_query = "SELECT email, phone_number FROM Users WHERE user_id = ?";
+    $stmt = $conn->prepare($user_query);
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $user_result = $stmt->get_result();
+    $user_data = $user_result->fetch_assoc();
+    $stmt->close();
+
+    // Fetch the price for the route from Stop_Pricing table
+    $pricing_query = "SELECT price FROM Stop_Pricing WHERE start_stop_id = ? AND end_stop_id = ?";
+    $stmt = $conn->prepare($pricing_query);
+    $stmt->bind_param("ii", $start_stop_id, $end_stop_id);
+    $stmt->execute();
+    $pricing_result = $stmt->get_result();
+    $price_row = $pricing_result->fetch_assoc();
+    $price_per_seat = $price_row['price'];
+    $stmt->close();
+
+    // Calculate total amount based on selected seats
+    $total_amount = $price_per_seat * count($seat_ids);
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Page</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f0f2f5;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .payment-card {
+            max-width: 450px;
+            width: 100%;
+            padding: 25px 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            background-color: #fff;
+            border: 1px solid #e0e4e8;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .payment-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+        }
+        .payment-card h2 {
+            font-weight: bold;
+            color: #3377AA;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
+        .form-group label {
+            font-weight: 600;
+            color: #555;
+        }
+        .form-control {
+            border-radius: 8px;
+            border: 1px solid #ccd1d7;
+            background-color: #f8fafc;
+            padding: 12px;
+            font-size: 16px;
+        }
+        .payment-option {
+            display: flex;
+            align-items: center;
+            border: 1px solid #ccd1d7;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+        .payment-option:hover {
+            background-color: #f0f4f8;
+            border-color: #3377AA;
+        }
+        .payment-option.selected {
+            background-color: #e6f0f8;
+            border-color: #3377AA;
+        }
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            color: #7d8793;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .btn-primary {
+            width: 100%;
+            font-weight: bold;
+            padding: 12px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="payment-card">
+        <h2>Payment Details</h2>
+        <form id="payment-form" action="process_payment.php" method="POST">
+            <div class="form-group">
+                <label for="user_name">User Name:</label>
+                <input type="text" class="form-control" id="user_name" value="<?php echo htmlspecialchars($user_data['email']); ?>" disabled>
+            </div>
+            <div class="form-group">
+                <label for="mobile">Mobile Number:</label>
+                <input type="text" class="form-control" id="mobile" value="<?php echo htmlspecialchars($user_data['phone_number']); ?>" disabled>
+            </div>
+            <div class="form-group">
+                <label for="total_amount">Amount to Pay:</label>
+                <input type="text" class="form-control" id="total_amount" name="total_amount" value="<?php echo htmlspecialchars($total_amount); ?>" readonly>
+            </div>
+
+            <!-- Payment Method Options -->
+            <div class="payment-option" id="gpay-option" onclick="selectPaymentOption('gpay')">
+                <i class="fab fa-google-pay fa-2x" style="margin-right: 10px;"></i> Google Pay
+            </div>
+            <div class="payment-option" id="creditcard-option" onclick="selectPaymentOption('creditcard')">
+                <i class="fas fa-credit-card fa-2x" style="margin-right: 10px;"></i> Credit Card
+            </div>
+            
+            <!-- Hidden field to store selected payment option -->
+            <input type="hidden" id="selected-payment-option" name="payment_method" value="">
+
+            <button type="button" class="btn btn-primary" onclick="processPayment()">Pay Now <i class="fas fa-lock"></i></button>
+        </form>
+        <div class="footer">
+            <p>Secured Payment Gateway</p>
+        </div>
+    </div>
+
+    <script>
+        function selectPaymentOption(option) {
+            document.getElementById('selected-payment-option').value = option;
+            document.getElementById('gpay-option').classList.remove('selected');
+            document.getElementById('creditcard-option').classList.remove('selected');
+            
+            if (option === 'gpay') {
+                document.getElementById('gpay-option').classList.add('selected');
+            } else if (option === 'creditcard') {
+                document.getElementById('creditcard-option').classList.add('selected');
+            }
+        }
+
+        function processPayment() {
+            const selectedOption = document.getElementById('selected-payment-option').value;
+            
+            if (selectedOption === 'gpay') {
+                window.location.href = 'gpay_redirect.php';
+            } else if (selectedOption === 'creditcard') {
+                window.location.href = 'creditcard_redirect.php';
+            } else {
+                alert('Please select a payment method.');
+            }
+        }
+    </script>
+</body>
+</html>
+
+
+
+
+
+<?php
+}
+?>

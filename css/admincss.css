@@ -1,0 +1,121 @@
+/* Form container styling */
+.card {
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #4A4A4A;
+}
+
+/* Input fields */
+.form-control {
+    border-radius: 8px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #6c5ce7;
+    box-shadow: 0 0 5px rgba(108, 92, 231, 0.5);
+}
+
+/* Labels */
+.form-label {
+    font-weight: bold;
+    color: #333;
+}
+
+/* Select dropdown */
+.form-select {
+    border-radius: 8px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    transition: all 0.3s ease;
+}
+
+.form-select:focus {
+    border-color: #6c5ce7;
+    box-shadow: 0 0 5px rgba(108, 92, 231, 0.5);
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: #6c5ce7;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+    font-size: 1rem;
+}
+
+.btn-primary:hover {
+    background-color: #5947c1;
+}
+
+.btn-secondary {
+    background-color: #ff7675;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+    font-size: 1rem;
+}
+
+.btn-secondary:hover {
+    background-color: #d62e2e;
+}
+
+/* Table Styling */
+.table {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.table thead th {
+    background-color: #6c5ce7;
+    color: white;
+    border: none;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: #f9f9f9;
+}
+
+.table-striped tbody tr:nth-of-type(even) {
+    background-color: #efefef;
+}
+
+.table tbody tr:hover {
+    background-color: #e0e0e0;
+}
+
+.table td, .table th {
+    padding: 15px;
+    vertical-align: middle;
+}
+
+/* Search and filter form */
+.mb-4 form {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.form-label {
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+/* Container styling */
+.content-wrapper {
+    padding: 20px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}

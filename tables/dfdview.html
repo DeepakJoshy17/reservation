@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boat Reservation System DFDs</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #3377AA;
+        }
+
+        .mermaid {
+            margin: 20px auto;
+            background-color: #ffffff;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+    </style>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true });
+    </script>
+</head>
+<body>
+
+<div class="container">
+    <h1>Boat Reservation System - Data Flow Diagrams (DFD)</h1>
+
+    <!-- Level 0 DFD -->
+    <h2>Level 0 DFD - System Overview</h2>
+    <div class="mermaid">
+        graph TD
+            User["User"]
+            System["Boat Reservation System"]
+            User -->|Book Seat| System
+            System -->|Confirmation| User
+            System -->|Booking Data| Database["Database"]
+    </div>
+
+    <!-- Level 1 DFD -->
+    <h2>Level 1 DFD - Main Modules</h2>
+    <div class="mermaid">
+        graph TD
+            User["User"]
+            System["Boat Reservation System"]
+            subgraph Modules
+                Booking["Booking Management"]
+                Payment["Payment Processing"]
+                Ticket["Ticket Management"]
+                Boat["Boat Management"]
+            end
+            User -->|Request Booking| Booking
+            Booking -->|Store Booking| System
+            Booking -->|Generate Ticket| Ticket
+            Ticket -->|Send Ticket| User
+            Payment -->|Process Payment| Booking
+            System -->|Store Data| Database["Database"]
+    </div>
+
+    <!-- Level 2 DFD -->
+    <h2>Level 2 DFD - Detailed System Functionalities</h2>
+    <div class="mermaid">
+        graph TD
+            User["User"]
+            Booking["Booking Management"]
+            Payment["Payment Processing"]
+            Ticket["Ticket Management"]
+            Boat["Boat Management"]
+            Database["Database"]
+
+            subgraph BookingSystem
+                Search["Search Boats"]
+                Select["Select Seat"]
+                Confirm["Confirm Booking"]
+                Pay["Make Payment"]
+            end
+
+            User -->|Search Boat| Search
+            Search -->|Show Boats| User
+            User -->|Select Seat| Select
+            Select -->|Confirm| Confirm
+            Confirm -->|Proceed to Payment| Pay
+            Pay --> Payment
+            Payment -->|Success| Confirm
+            Confirm -->|Generate Ticket| Ticket
+            Ticket -->|Send Ticket| User
+            BookingSystem -->|Store Data| Database
+    </div>
+</div>
+
+</body>
+</html>

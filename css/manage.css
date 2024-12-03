@@ -1,0 +1,227 @@
+/* Custom Styles for Manage Boats Page */
+
+/* Body and General Styles */
+body {
+    background-color: #F8F8F2; /* Ivory background for a soft look */
+    font-family: 'Arial', sans-serif;
+    color: #2F4F4F; /* Dark Slate Gray for text */
+}
+
+/* Container */
+.content-wrapper {
+    padding: 20px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+    color: #2F4F4F;
+}
+
+/* Card Styles */
+.card {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+.card-title {
+    color: #2F4F4F; /* Dark Slate Gray for titles */
+    margin-bottom: 15px;
+    font-size: 1.5em;
+    border-bottom: 2px solid #D3D3D3; /* Light Gray underline */
+    padding-bottom: 10px;
+}
+
+/* Form Styles */
+form {
+    margin-top: 20px;
+}
+
+.form-label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    display: block;
+    color: #2F4F4F;
+}
+
+.form-control, .form-select {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 15px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    background-color: #f9f9f9; /* Slightly off-white for inputs */
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #2F4F4F;
+    outline: none;
+    box-shadow: 0 0 5px rgba(47, 79, 79, 0.5); /* Dark Slate Gray shadow */
+}
+
+/* Button Styles */
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+    color: #ffffff;
+    margin-right: 10px; /* Space between buttons */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+}
+
+/* Primary Button - Add Boat */
+.btn-primary {
+    background-color: #4B4B4B; /* Charcoal Gray */
+    background-image: linear-gradient(145deg, #4B4B4B, #333333);
+}
+
+.btn-primary:hover {
+    background-color: #333333; /* Darker Charcoal on hover */
+    background-image: linear-gradient(145deg, #333333, #4B4B4B);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Secondary Button - Search */
+.btn-secondary {
+    background-color: #6C757D; /* Medium Gray */
+    background-image: linear-gradient(145deg, #6C757D, #5A6268);
+}
+
+.btn-secondary:hover {
+    background-color: #5A6268; /* Darker Medium Gray on hover */
+    background-image: linear-gradient(145deg, #5A6268, #6C757D);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Warning Button - Edit */
+.btn-warning {
+    background-color: #A9A9A9; /* Darker Gray for edit */
+    background-image: linear-gradient(145deg, #A9A9A9, #808080);
+}
+
+.btn-warning:hover {
+    background-color: #808080; /* Slightly darker on hover */
+    background-image: linear-gradient(145deg, #808080, #A9A9A9);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Danger Button - Delete */
+.btn-danger {
+    background-color: #A9A9A9; /* Darker Gray */
+    background-image: linear-gradient(145deg, #A9A9A9, #808080);
+}
+
+.btn-danger:hover {
+    background-color: #808080; /* Slightly darker on hover */
+    background-image: linear-gradient(145deg, #808080, #A9A9A9);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Add specific button alignment classes */
+.button-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.button-group .btn {
+    flex: 1; /* Make buttons take equal width */
+}
+
+/* Table Styles */
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table th, .table td {
+    padding: 12px 15px;
+    border: 1px solid #e0e0e0;
+    text-align: left;
+}
+
+.table th {
+    background-color: #D3D3D3; /* Light Gray for header */
+    color: #2F4F4F;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: #f9f9f9;
+}
+
+.table-bordered {
+    border: 1px solid #e0e0e0;
+}
+
+/* Search and Filter Forms */
+.mb-4 form .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.mb-4 form .col-md-4 {
+    flex: 1;
+    min-width: 200px;
+}
+
+/* QR Code Section */
+.qr-code {
+    text-align: center;
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #F8F8F2;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.qr-code img {
+    width: 100px;
+    height: 100px;
+}
+
+/* Footer Styles */
+.footer {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 0.9em;
+    color: #666;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .btn {
+        width: 100%;
+        text-align: center;
+        margin-right: 0;
+        margin-bottom: 10px;
+    }
+
+    .button-group {
+        flex-direction: column;
+    }
+
+    .qr-code img {
+        width: 80px;
+        height: 80px;
+    }
+}

@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Tables for Waterway Project</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f8f8;
+            color: black; /* Set text color to black */
+            margin: 20px;
+        }
+        h2 {
+            color: #3377AA; /* Set header color */
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background-color: #fff; /* Set table background color */
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .description {
+            font-style: italic;
+            color: #555; /* Optional styling for description */
+        }
+    </style>
+</head>
+<body>
+    <h2>Database Tables for Waterway Project</h2>
+
+    <h3>1. Users Table</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Column Name</th>
+                <th>Data Type</th>
+                <th>Constraints</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>user_id</td><td>INT</td><td>PRIMARY KEY, AUTO_INCREMENT</td></tr>
+            <tr><td>username</td><td>VARCHAR(50)</td><td>NOT NULL, UNIQUE</td></tr>
+            <tr><td>password</td><td>VARCHAR(255)</td><td>NOT NULL</td></tr>
+            <tr><td>email</td><td>VARCHAR(100)</td><td>NOT NULL, UNIQUE</td></tr>
+            <tr><td>created_at</td><td>DATETIME</td><td>NOT NULL, DEFAULT CURRENT_TIMESTAMP</td></tr>
+        </tbody>
+    </table>
+    <label class="description">Description: Stores user information.</label>
+
+    <h3>2. Boats Table</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Column Name</th>
+                <th>Data Type</th>
+                <th>Constraints</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>boat_id</td><td>INT</td><td>PRIMARY KEY, AUTO_INCREMENT</td></tr>
+            <tr><td>boat_name</td><td>VARCHAR(50)</td><td>NOT NULL</td></tr>
+            <tr><td>capacity</td><td>INT</td><td>NOT NULL</td></tr>
+            <tr><td>type</td><td>VARCHAR(30)</td><td>NOT NULL</td></tr>
+        </tbody>
+    </table>
+    <label class="description">Description: Stores information about boats.</label>
+
+    <h3>3. Routes Table</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Column Name</th>
+                <th>Data Type</th>
+                <th>Constraints</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>route_id</td><td>INT</td><td>PRIMARY KEY, AUTO_INCREMENT</td></tr>
+            <tr><td>route_name</td><td>VARCHAR(50)</td><td>NOT NULL</td></tr>
+            <tr><td>distance</td><td>DECIMAL(10, 2)</td><td>NOT NULL</td></tr>
+        </tbody>
+    </table>
+    <label class="description">Description: Defines different routes for boat trips.</label>
+
+    <h3>4. Route_Stops Table</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Column Name</th>
+                <th>Data Type</th>
+                <th>Constraints</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>stop_id</td><td>INT</td><td>PRIMARY KEY, AUTO_INCREMENT</td></tr>
+            <tr><td>route_id</td><td>INT</td><td>FOREIGN KEY REFERENCES Routes(route_id)</td></tr>
+            <tr><td>location</td><td>VARCHAR(100)</td><td>NOT NULL</td></tr>
+            <tr><td>stop_order</td><td>INT</td><td>NOT NULL</td></tr>
+            <tr><td>km</td><td>DECIMAL(10, 2)</td><td>NOT NULL</td></tr>
+        </tbody>
+    </table>
+    <label class="description">Description: Stores the stops for each route.</label>
+
+    <h3>5. Schedules Table</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Column Name</th>
+                <th>Data Type</th>
+                <th>Constraints</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>schedule_id</td><td>INT</td><td>PRIMARY KEY, AUTO_INCREMENT</td></tr>
+            <tr><td>boat_id</td><td>INT</td><td>FOREIGN KEY REFERENCES Boats(boat_id)</td></tr>
+            <tr><td>route_id</td><td>INT</td><td>FOREIGN KEY REFERENCES Routes(route_id)</td></tr>
+            <tr><td>departure_time</td><td>DATETIME</td><td>NOT NULL</td></tr>
+            <tr><td>arrival_time</td><td>DATETIME</td><td>NOT NULL</td></tr>
+        </tbody>
+    </table>
+    <label class="description">Description: Holds the schedules for boat departures.</label>
+
+    <h3>6. Seats Table</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Column Name</th>
+                <th>Data Type</th>
+                <th>Constraints</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>seat_id</td><td>INT</td><td>PRIMARY KEY, AUTO_INCREMENT</td></tr>
+            <tr><td>boat_id</td><td>INT</td><td>FOREIGN KEY REFERENCES Boats(boat_id)</td></tr>
+            <tr><td>seat_number</td><td>VARCHAR(10)</td><td>NOT NULL</td></tr>
+            <tr><td>status</td><td>ENUM('available', 'booked')</td><td>NOT NULL, DEFAULT 'available'</td></tr>
+        </tbody>
+    </table>
+    <label class="description">Description: Stores information about seats available on boats.</label>
+
+    <h3>7. Seat_Bookings Table</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Column Name</th>
+                <th>Data Type</th>
+                <th>Constraints</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>booking_id</td><td>INT</td><td>PRIMARY KEY, AUTO_INCREMENT</td></tr>
+            <tr><td>user_id</td><td>INT</td><td>FOREIGN KEY REFERENCES Users(user_id)</td></tr>
+            <tr><td>seat_id</td><td>INT</td><td>FOREIGN KEY REFERENCES Seats(seat_id)</td></tr>
+            <tr><td>schedule_id</td><td>INT</td><td>FOREIGN KEY REFERENCES Schedules(schedule_id)</td></tr>
+            <tr><td>booking_date</td><td>DATETIME</td><td>NOT NULL, DEFAULT CURRENT_TIMESTAMP</td></tr>
+        </tbody>
+    </table>
+    <label class="description">Description: Records user bookings for seats.</label>
+
+    <h3>8. Payments Table</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Column Name</th>
+                <th>Data Type</th>
+                <th>Constraints</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>payment_id</td><td>INT</td><td>PRIMARY KEY, AUTO_INCREMENT</td></tr>
+            <tr><td>booking_id</td><td>INT</td><td>FOREIGN KEY REFERENCES Seat_Bookings(booking_id)</td></tr>
+            <tr><td>amount</td><td>DECIMAL(10, 2)</td><td>NOT NULL</td></tr>
+            <tr><td>payment_date</td><td>DATETIME</td><td>NOT NULL, DEFAULT CURRENT_TIMESTAMP</td></tr>
+        </tbody>
+    </table>
+    <label class="description">Description: Manages payment information for bookings.</label>
+
+    <h3>9. Cancellations Table</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Column Name</th>
+                <th>Data Type</th>
+                <th>Constraints</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>cancellation_id</td><td>INT</td><td>PRIMARY KEY, AUTO_INCREMENT</td></tr>
+            <tr><td>booking_id</td><td>INT</td><td>FOREIGN KEY REFERENCES Seat_Bookings(booking_id)</td></tr>
+            <tr><td>cancellation_date</td><td>DATETIME</td><td>NOT NULL, DEFAULT CURRENT_TIMESTAMP</td></tr>
+            <tr><td>refund_amount</td><td>DECIMAL(10, 2)</td><td>NOT NULL</td></tr>
+        </tbody>
+    </table>
+    <label class="description">Description: Stores cancellation requests and refund amounts.</label>
+
+    <h3>10. Admin_Logs Table</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Column Name</th>
+                <th>Data Type</th>
+                <th>Constraints</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>log_id</td><td>INT</td><td>PRIMARY KEY, AUTO_INCREMENT</td></tr>
+            <tr><td>admin_id</td><td>INT</td><td>FOREIGN KEY REFERENCES Users(user_id)</td></tr>
+            <tr><td>action</td><td>VARCHAR(255)</td><td>NOT NULL</td></tr>
+            <tr><td>log_date</td><td>DATETIME</td><td>NOT NULL, DEFAULT CURRENT_TIMESTAMP</td></tr>
+        </tbody>
+    </table>
+    <label class="description">Description: Logs administrative actions performed in the system.</label>
+
+    <h3>11. Route_Stop_Times Table</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Column Name</th>
+                <th>Data Type</th>
+                <th>Constraints</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>route_stop_time_id</td><td>INT</td><td>PRIMARY KEY, AUTO_INCREMENT</td></tr>
+            <tr><td>route_id</td><td>INT</td><td>FOREIGN KEY REFERENCES Routes(route_id)</td></tr>
+            <tr><td>stop_id</td><td>INT</td><td>FOREIGN KEY REFERENCES Route_Stops(stop_id)</td></tr>
+            <tr><td>arrival_time</td><td>DATETIME</td><td>NOT NULL</td></tr>
+            <tr><td>departure_time</td><td>DATETIME</td><td>NOT NULL</td></tr>
+        </tbody>
+    </table>
+    <label class="description">Description: Records arrival and departure times for route stops.</label>
+
+    <h3>12. Stop_Pricing Table</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Column Name</th>
+                <th>Data Type</th>
+                <th>Constraints</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>id</td><td>INT</td><td>PRIMARY KEY, AUTO_INCREMENT</td></tr>
+            <tr><td>start_stop_id</td><td>INT</td><td>FOREIGN KEY REFERENCES Route_Stops(stop_id)</td></tr>
+            <tr><td>end_stop_id</td><td>INT</td><td>FOREIGN KEY REFERENCES Route_Stops(stop_id)</td></tr>
+            <tr><td>price</td><td>DECIMAL(10, 2)</td><td>NOT NULL</td></tr>
+        </tbody>
+    </table>
+    <label class="description">Description: Sets pricing for trips between stops.</label>
+
+    <h3>13. Tickets Table</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Column Name</th>
+                <th>Data Type</th>
+                <th>Constraints</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>ticket_id</td><td>INT</td><td>PRIMARY KEY, AUTO_INCREMENT</td></tr>
+            <tr><td>booking_id</td><td>INT</td><td>FOREIGN KEY REFERENCES Seat_Bookings(booking_id)</td></tr>
+            <tr><td>amount</td><td>DECIMAL(10, 2)</td><td>NOT NULL</td></tr>
+        </tbody>
+    </table>
+    <label class="description">Description: Holds ticket information related to bookings.</label>
+
+    <h3>14. Enquiries Table</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Column Name</th>
+                <th>Data Type</th>
+                <th>Constraints</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>enquiry_id</td><td>INT</td><td>PRIMARY KEY, AUTO_INCREMENT</td></tr>
+            <tr><td>user_id</td><td>INT</td><td>FOREIGN KEY REFERENCES Users(user_id)</td></tr>
+            <tr><td>name</td><td>VARCHAR(50)</td><td>NOT NULL</td></tr>
+            <tr><td>email</td><td>VARCHAR(100)</td><td>NOT NULL</td></tr>
+            <tr><td>message</td><td>TEXT</td><td>NOT NULL</td></tr>
+            <tr><td>submitted_at</td><td>DATETIME</td><td>NOT NULL, DEFAULT CURRENT_TIMESTAMP</td></tr>
+        </tbody>
+    </table>
+    <label class="description">Description: Stores user enquiries and feedback.</label>
+
+</body>
+</html>

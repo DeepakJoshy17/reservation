@@ -1,0 +1,230 @@
+<?php
+session_start();
+
+// Include database connection and PHPMailer
+include 'db_connection.php';
+require 'vendor/autoload.php';
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Retrieve POST data
+    $boat_id = $_POST['boat_id'];
+    $schedule_id = $_POST['schedule_id'];
+    $user_id = $_POST['user_id'];
+    $selected_seats = $_POST['selected_seats'];
+    $start_stop_id = $_POST['start_stop_id'];
+    $end_stop_id = $_POST['end_stop_id'];
+    $total_amount = $_POST['total_amount'];
+    $payment_method = 'Credit Card'; // Example method, can be dynamic
+    $seat_ids = explode(',', $selected_seats);
+
+    // Start transaction
+    $conn->begin_transaction();
+
+    try {
+        // Fetch user details for email
+        $stmt = $conn->prepare("SELECT email FROM Users WHERE user_id = ?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $user_result = $stmt->get_result();
+        $user_data = $user_result->fetch_assoc();
+        $stmt->close();
+        $user_email = $user_data['email'];
+
+        // Fetch boat name
+        $stmt = $conn->prepare("SELECT boat_name FROM Boats WHERE boat_id = ?");
+        $stmt->bind_param("i", $boat_id);
+        $stmt->execute();
+        $boat_result = $stmt->get_result();
+        $boat_data = $boat_result->fetch_assoc();
+        $stmt->close();
+        $boat_name = $boat_data['boat_name'];
+
+        // Fetch schedule details
+        $stmt = $conn->prepare("
+            SELECT R.route_name, S.departure_time, S.arrival_time 
+            FROM Schedules S 
+            JOIN Routes R ON S.route_id = R.route_id 
+            WHERE S.schedule_id = ?
+        ");
+        $stmt->bind_param("i", $schedule_id);
+        $stmt->execute();
+        $schedule_result = $stmt->get_result();
+        $schedule_data = $schedule_result->fetch_assoc();
+        $stmt->close();
+        $schedule_details = $schedule_data['route_name'] . " (" . $schedule_data['departure_time'] . " to " . $schedule_data['arrival_time'] . ")";
+
+        $seat_numbers = []; // Array to hold seat numbers
+        $booking_ids = []; // Array to hold booking IDs
+        $failed_seat_ids = []; // Array to hold seats that are already booked
+
+        // Check seat availability and insert into Seat_Bookings
+        foreach ($seat_ids as $seat_id) {
+            // Check if the seat is already booked
+            $stmt = $conn->prepare("
+                SELECT seat_id FROM Seat_Bookings 
+                WHERE seat_id = ? AND schedule_id = ? AND start_stop_id = ?
+            ");
+            $stmt->bind_param("iii", $seat_id, $schedule_id, $start_stop_id);
+            $stmt->execute();
+            $seat_result = $stmt->get_result();
+
+            if ($seat_result->num_rows > 0) {
+                // Seat is already booked
+                $failed_seat_ids[] = $seat_id; // Add to failed seat IDs
+                $stmt->close();
+                continue; // Skip to next seat
+            }
+            $stmt->close();
+
+            // Fetch seat number
+            $stmt = $conn->prepare("SELECT seat_number FROM Seats WHERE seat_id = ?");
+            $stmt->bind_param("i", $seat_id);
+            $stmt->execute();
+            $seat_result = $stmt->get_result();
+            $seat_data = $seat_result->fetch_assoc();
+            $seat_number = $seat_data['seat_number'];
+            $seat_numbers[] = $seat_number; // Add seat number to array
+            $stmt->close();
+
+            // Insert into Seat_Bookings (including boat_id)
+            $stmt = $conn->prepare("
+                INSERT INTO Seat_Bookings (schedule_id, user_id, seat_id, start_stop_id, end_stop_id, booking_date, payment_status, boat_id)
+                VALUES (?, ?, ?, ?, ?, NOW(), 'Pending', ?)
+            ");
+            $stmt->bind_param("iiiiii", $schedule_id, $user_id, $seat_id, $start_stop_id, $end_stop_id, $boat_id); // Add boat_id here
+            $stmt->execute();
+            $booking_id = $stmt->insert_id; // Store the inserted booking ID
+            $booking_ids[] = $booking_id; // Add booking ID to array
+            $stmt->close();
+        }
+
+        // If there are any failed seat bookings, handle notifications
+        if (!empty($failed_seat_ids)) {
+            $failed_seat_numbers = [];
+            foreach ($failed_seat_ids as $failed_seat_id) {
+                // Fetch seat number
+                $stmt = $conn->prepare("SELECT seat_number FROM Seats WHERE seat_id = ?");
+                $stmt->bind_param("i", $failed_seat_id);
+                $stmt->execute();
+                $seat_result = $stmt->get_result();
+                $seat_data = $seat_result->fetch_assoc();
+                $failed_seat_numbers[] = $seat_data['seat_number'];
+                $stmt->close();
+            }
+
+            // Send notification to user about the failed seats
+            $mail = new PHPMailer;
+            $mail->isSMTP();
+            $mail->Host = 'smtp.gmail.com'; // Your SMTP server
+            $mail->SMTPAuth = true;
+            $mail->Username = 'deepakjoshy17@gmail.com'; // Your email username
+            $mail->Password = 'qqzq rwul sjoh flnp'; // Your email password (Use environment variables in production)
+            $mail->SMTPSecure = 'tls';
+            $mail->Port = 587;
+
+            $mail->setFrom('your_email@example.com', 'Waterway Reservations');
+            $mail->addAddress($user_email); // User's email
+
+            $mail->isHTML(true);
+            $mail->Subject = 'Seat Booking Update';
+            $mail->Body    = '
+                <p>Dear User,</p>
+                <p>Unfortunately, the following seats you selected were already booked:</p>
+                <ul>
+                    <li>Seats: ' . htmlspecialchars(implode(', ', $failed_seat_numbers)) . '</li>
+                </ul>
+                <p>Your other bookings have been successfully processed.</p>
+                <p>Thank you for choosing Waterway!</p>
+            ';
+            $mail->send();
+
+            // Store notification message for display on the website
+            $_SESSION['failed_seat_message'] = 'Unfortunately, the following seats were already booked: ' . htmlspecialchars(implode(', ', $failed_seat_numbers));
+
+            // Rollback transaction and redirect to seatview.php
+             // Rollback transaction and redirect to seatview.php with parameters
+    $conn->rollback();
+    header("Location: seatview.php?boat_id=$boat_id&schedule_id=$schedule_id&start_stop_id=$start_stop_id&end_stop_id=$end_stop_id");
+            exit();
+        }
+
+        // Insert into Payments table if there are successful bookings
+        if (!empty($booking_ids)) {
+            $stmt = $conn->prepare("
+                INSERT INTO Payments (amount, payment_method, payment_status)
+                VALUES (?, ?, 'Paid')
+            ");
+            $stmt->bind_param("ds", $total_amount, $payment_method); // Use total amount and payment method
+            $stmt->execute();
+            $payment_id = $stmt->insert_id; // Store the inserted payment ID
+            $stmt->close();
+
+            // Update each Seat_Bookings with the payment_id
+            foreach ($booking_ids as $booking_id) {
+                $stmt = $conn->prepare("
+                    UPDATE Seat_Bookings 
+                    SET payment_status = 'Paid', payment_id = ?
+                    WHERE booking_id = ?
+                ");
+                $stmt->bind_param("ii", $payment_id, $booking_id);
+                $stmt->execute();
+                $stmt->close();
+            }
+        }
+
+        // Commit transaction
+        $conn->commit();
+        // Update session variable to prevent repeated payments
+        $_SESSION['payment_done'] = true;
+
+        // Store booking_ids and payment_id in session for ticket generation
+        $_SESSION['booking_ids'] = $booking_ids;
+        $_SESSION['payment_id'] = $payment_id;
+
+        // Send confirmation email for successful bookings
+        $mail = new PHPMailer;
+        $mail->isSMTP();
+        $mail->Host = 'smtp.gmail.com'; // Your SMTP server
+        $mail->SMTPAuth = true;
+        $mail->Username = 'deepakjoshy17@gmail.com'; // Your email username
+        $mail->Password = 'qqzq rwul sjoh flnp'; // Your email password (Use environment variables in production)
+        $mail->SMTPSecure = 'tls';
+        $mail->Port = 587;
+
+        $mail->setFrom('your_email@example.com', 'Waterway Reservations');
+        $mail->addAddress($user_email); // User's email
+
+        $mail->isHTML(true);
+        $mail->Subject = 'Booking Confirmation';
+        $mail->Body    = '
+            <p>Dear User,</p>
+            <p>Your booking was successful! Here are your booking details:</p>
+            <ul>
+                <li>Boat Name: ' . htmlspecialchars($boat_name) . '</li>
+                <li>Schedule: ' . htmlspecialchars($schedule_details) . '</li>
+                <li>Selected Seats: ' . htmlspecialchars(implode(', ', $seat_numbers)) . '</li>
+                <li>Total Amount: ' . htmlspecialchars($total_amount) . '</li>
+            </ul>
+            <p>Thank you for choosing Waterway!</p>
+        ';
+
+        $mail->send();
+
+        // Store success message for display on the website
+        $_SESSION['success_message'] = 'Your booking was successful!';
+
+        // Redirect to confirmation page
+        header("Location: payment_confirmation.php");
+        exit();
+
+    } catch (Exception $e) {
+        // Rollback transaction on error
+        $conn->rollback();
+        echo "<div class='alert alert-danger'>Error processing payment: " . $e->getMessage() . "</div>";
+    }
+} else {
+    echo "<div class='alert alert-danger'>Invalid request.</div>";
+}
+?>

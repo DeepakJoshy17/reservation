@@ -1,0 +1,89 @@
+/* Card Styling */
+.card {
+    border: none;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+.card-title {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+.card-text {
+    font-size: 1rem;
+    color: #555;
+}
+
+.card-footer {
+    background-color: #f8f9fa;
+    padding: 0.75rem;
+    text-align: center;
+}
+
+/* More specific selectors to avoid conflicts */
+.btn-primary.custom {
+    background-color: #3377AA !important; /* Main color */
+    border-color: #3377AA !important; /* Main color for border */
+    color: #ffffff !important; /* White text */
+    border-radius: 0.25rem !important;
+    padding: 0.75rem 1.25rem !important;
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+    transition: background-color 0.3s, color 0.3s !important;
+}
+
+.btn-primary.custom:hover {
+    background-color: #ffffff !important; /* White background on hover */
+    color: #3377AA !important; /* Main color for text on hover */
+    border-color: #3377AA !important; /* Main color for border on hover */
+}
+
+/* Adjusted Form Field Styling */
+.form-control.custom, .form-select.custom {
+    border-radius: 0.25rem !important;
+    border-color: #3377AA !important; /* Main color for borders */
+    box-shadow: none !important;
+    font-size: 1rem !important;
+    padding: 0.5rem !important; /* Adjust padding to make fields smaller or larger */
+    width: 100% !important; /* Change this value to adjust width */
+    max-width: 100%; /* Ensure fields do not exceed their container */
+    box-sizing: border-box; /* Include padding and border in the element's total width and height */
+}
+
+/* Optional: Adjust margins to control spacing around fields */
+.form-control.custom, .form-select.custom {
+    margin-bottom: 1rem; /* Adjust the space below each field */
+}
+body {
+    font-family: 'Arial', sans-serif; /* Custom font */
+    background-color: #f4f4f4; /* Light background color for the body */
+}
+
+h3 {
+    color: #007bff; /* Main color for headings */
+}
+
+.alert {
+    font-weight: bold; /* Bold text for alerts */
+}
+
+.list-group-item {
+    background-color: #f9f9f9; /* Light background for list items */
+}
+
+.list-group-item strong {
+    color: #333; /* Dark text for labels in list items */
+}

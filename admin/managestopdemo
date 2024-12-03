@@ -1,0 +1,362 @@
+<?php include 'headeradmin.php'; ?>
+<?php include 'sidebar.php'; ?>
+<?php 
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+//session_start();
+
+// Check if admin is logged in, if not, redirect to login page
+if (!isset($_SESSION['admin_id'])) {
+    header("Location: admindashboard.php");
+    exit;
+}
+
+include 'db_connection.php';
+
+
+
+// Function to log admin actions
+function log_admin_action($admin_id, $action, $description) {
+    global $conn;
+    $query = "INSERT INTO Admin_Logs (admin_id, action, description) VALUES (?, ?, ?)";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("iss", $admin_id, $action, $description);
+    $stmt->execute();
+    $stmt->close();
+}
+
+// Function to manage stop pricing
+function manage_stop_pricing($action) {
+    global $conn;
+    $admin_id = $_SESSION['admin_id']; // Get logged in admin ID
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+        $start_stop_id = $_POST['start_stop_id'];
+        $end_stop_id = $_POST['end_stop_id'];
+        $price = $_POST['price'];
+        
+        if ($action == 'add') {
+            $query = "INSERT INTO Stop_Pricing (start_stop_id, end_stop_id, price) VALUES (?, ?, ?)";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("iid", $start_stop_id, $end_stop_id, $price);
+            if ($stmt->execute()) {
+                $msg = "<div class='alert alert-success'>Price added successfully.</div>";
+                log_admin_action($admin_id, 'Add Stop Price', "Added price for start stop ID: $start_stop_id and end stop ID: $end_stop_id");
+            } else {
+                $msg = "<div class='alert alert-danger'>Error: " . $stmt->error . "</div>";
+            }
+            $stmt->close();
+        } elseif ($action == 'edit') {
+            $id = $_POST['id'];
+            $query = "UPDATE Stop_Pricing SET price = ? WHERE id = ?";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("di", $price, $id);
+            if ($stmt->execute()) {
+                $msg = "<div class='alert alert-success'>Price updated successfully.</div>";
+                log_admin_action($admin_id, 'Edit Stop Price', "Updated price for ID: $id");
+            } else {
+                $msg = "<div class='alert alert-danger'>Error: " . $stmt->error . "</div>";
+            }
+            $stmt->close();
+        } elseif ($action == 'remove') {
+            $id = $_POST['id'];
+            $query = "DELETE FROM Stop_Pricing WHERE id = ?";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("i", $id);
+            if ($stmt->execute()) {
+                $msg = "<div class='alert alert-success'>Price removed successfully.</div>";
+                log_admin_action($admin_id, 'Remove Stop Price', "Removed price for ID: $id");
+            } else {
+                $msg = "<div class='alert alert-danger'>Error: " . $stmt->error . "</div>";
+            }
+            $stmt->close();
+        }
+        return isset($msg) ? $msg : '';
+    }
+}
+
+// Handle form submissions
+$action = isset($_POST['action']) ? $_POST['action'] : '';
+$message = manage_stop_pricing($action);
+
+// Fetch all stop pricing records with search and filter functionality
+$search_query = "SELECT sp.id, rs1.location AS start_location, rs2.location AS end_location, sp.price 
+                 FROM Stop_Pricing sp
+                 JOIN Route_Stops rs1 ON sp.start_stop_id = rs1.stop_id
+                 JOIN Route_Stops rs2 ON sp.end_stop_id = rs2.stop_id";
+
+if (isset($_GET['start_stop']) || isset($_GET['end_stop']) || isset($_GET['price'])) {
+    $start_stop = isset($_GET['start_stop']) ? '%' . $_GET['start_stop'] . '%' : '%';
+    $end_stop = isset($_GET['end_stop']) ? '%' . $_GET['end_stop'] . '%' : '%';
+    $price = isset($_GET['price']) ? $_GET['price'] : '';
+
+    $search_query .= " WHERE rs1.location LIKE ? AND rs2.location LIKE ?";
+    if ($price) {
+        $search_query .= " AND sp.price = ?";
+    }
+
+    $stmt = $conn->prepare($search_query);
+    if ($price) {
+        $stmt->bind_param("sss", $start_stop, $end_stop, $price);
+    } else {
+        $stmt->bind_param("ss", $start_stop, $end_stop);
+    }
+    $stmt->execute();
+    $search_result = $stmt->get_result();
+} else {
+    $search_result = $conn->query($search_query);
+}
+
+// Fetch all stops for dropdown options
+$stops_query = "SELECT stop_id, location FROM Route_Stops ORDER BY location";
+$stops_result = $conn->query($stops_query);
+$stops = [];
+while ($row = $stops_result->fetch_assoc()) {
+    $stops[] = $row;
+}
+
+// Fetch all routes
+$routes_query = "SELECT route_id, route_name FROM Routes ORDER BY route_name";
+$routes_result = $conn->query($routes_query);
+$routes = [];
+while ($row = $routes_result->fetch_assoc()) {
+    $routes[] = $row;
+}
+?>
+
+<div class="content-wrapper">
+    <div class="container mt-5">
+        <h1 class="mb-4">Manage Stop Pricing</h1>
+
+        <?php if ($message): ?>
+            <div class="alert alert-info"><?php echo $message; ?></div>
+        <?php endif; ?>
+
+        <!-- Add Price -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2 class="card-title">Add Price</h2><br>
+                <form action="manage_stop_pricing.php" method="post" id="addPriceForm">
+                    <input type="hidden" name="action" value="add">
+                    <div class="mb-3">
+                        <label for="route_id_add" class="form-label">Route:</label>
+                        <select id="route_id_add" name="route_id" class="form-select" required>
+                            <option value="" disabled selected>Select Route</option>
+                            <?php foreach ($routes as $route): ?>
+                                <option value="<?php echo $route['route_id']; ?>"><?php echo $route['route_name']; ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="start_stop_id_add" class="form-label">Start Stop:</label>
+                        <select id="start_stop_id_add" name="start_stop_id" class="form-select" required>
+                            <option value="" disabled selected>Select Start Stop</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="end_stop_id_add" class="form-label">End Stop:</label>
+                        <select id="end_stop_id_add" name="end_stop_id" class="form-select" required>
+                            <option value="" disabled selected>Select End Stop</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="price_add" class="form-label">Price:</label>
+                        <input type="number" step="0.01" id="price_add" name="price" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Price</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Search and Filter -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2 class="card-title">Search and Filter Prices</h2><br>
+                <form action="manage_stop_pricing.php" method="get" id="searchForm">
+                    <div class="mb-3">
+                        <label for="search_start_stop" class="form-label">Start Stop:</label>
+                        <input type="text" id="search_start_stop" name="start_stop" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="search_end_stop" class="form-label">End Stop:</label>
+                        <input type="text" id="search_end_stop" name="end_stop" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="search_price" class="form-label">Price:</label>
+                        <input type="number" step="0.01" id="search_price" name="price" class="form-control">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Search</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Display Pricing Table -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2 class="card-title">Current Pricing</h2><br>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Start Stop</th>
+                            <th>End Stop</th>
+                            <th>Price</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if ($search_result && $search_result->num_rows > 0): ?>
+                            <?php while ($row = $search_result->fetch_assoc()): ?>
+                                <tr>
+                                    <td><?php echo $row['id']; ?></td>
+                                    <td><?php echo $row['start_location']; ?></td>
+                                    <td><?php echo $row['end_location']; ?></td>
+                                    <td><?php echo $row['price']; ?></td>
+                                    <td>
+                                        <!-- Edit Price Form -->
+                                        <form action="manage_stop_pricing.php" method="post" style="display:inline;">
+                                            <input type="hidden" name="action" value="edit">
+                                            <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
+                                            <input type="number" step="0.01" name="price" value="<?php echo $row['price']; ?>" required>
+                                            <button type="submit" class="btn btn-warning">Edit</button>
+                                        </form>
+                                        <!-- Remove Price Form -->
+                                        <form action="manage_stop_pricing.php" method="post" style="display:inline;">
+                                            <input type="hidden" name="action" value="remove">
+                                            <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
+                                            <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to remove this price?');">Remove</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <?php endwhile; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="5">No records found.</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Fetch stops dynamically based on the selected route
+    document.getElementById('route_id_add').addEventListener('change', function() {
+        var routeId = this.value;
+        var startStopSelect = document.getElementById('start_stop_id_add');
+        var endStopSelect = document.getElementById('end_stop_id_add');
+
+        // Clear previous options
+        startStopSelect.innerHTML = '<option value="" disabled selected>Select Start Stop</option>';
+        endStopSelect.innerHTML = '<option value="" disabled selected>Select End Stop</option>';
+
+        // Fetch stops via AJAX
+        fetch('fetch_stops.php?route_id=' + routeId)
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(stop => {
+                    var option = document.createElement('option');
+                    option.value = stop.stop_id;
+                    option.textContent = stop.location;
+                    startStopSelect.appendChild(option);
+                    endStopSelect.appendChild(option.cloneNode(true));
+                });
+            });
+    });
+</script>
+
+<?php include 'footer.php'; ?>
+
+
+
+
+
+    <script src="js/jquery-1.9.1.min.js"></script>
+    <script src="slick/slick.min.js"></script>
+    <script src="magnific-popup/jquery.magnific-popup.min.js"></script>
+    <script src="js/easing.min.js"></script>
+    <script src="js/jquery.singlePageNav.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+
+    <script>
+    $(document).ready(function() {
+        // Populate start and end stops based on selected route
+        $('#route_id_add').change(function() {
+            var routeId = $(this).val();
+            if (routeId) {
+                $.ajax({
+                    url: 'get_stops.php',
+                    type: 'GET',
+                    data: { route_id: routeId },
+                    success: function(data) {
+                        var stops = JSON.parse(data);
+                        var startStopSelect = $('#start_stop_id_add');
+                        var endStopSelect = $('#end_stop_id_add');
+                        startStopSelect.empty();
+                        endStopSelect.empty();
+                        startStopSelect.append('<option value="" disabled selected>Select Start Stop</option>');
+                        endStopSelect.append('<option value="" disabled selected>Select End Stop</option>');
+                        $.each(stops, function(index, stop) {
+                            startStopSelect.append('<option value="' + stop.stop_id + '">' + stop.location + '</option>');
+                            endStopSelect.append('<option value="' + stop.stop_id + '">' + stop.location + '</option>');
+                        });
+                    }
+                });
+            } else {
+                $('#start_stop_id_add').empty().append('<option value="" disabled selected>Select Start Stop</option>');
+                $('#end_stop_id_add').empty().append('<option value="" disabled selected>Select End Stop</option>');
+            }
+        });
+
+        // Inline Edit Price
+        $('body').on('click', '.edit-price', function() {
+            var row = $(this).closest('tr');
+            row.find('.price-display').hide();
+            row.find('.price-edit').show();
+            row.find('.save-price, .cancel-edit').show();
+            $(this).hide();
+        });
+
+        // Save Edited Price
+        $('body').on('click', '.save-price', function() {
+            var row = $(this).closest('tr');
+            var price = row.find('.price-edit').val();
+            var id = $(this).data('id');
+
+            $.ajax({
+                url: 'manage_stop_pricing.php',
+                type: 'POST',
+                data: { action: 'edit', id: id, price: price },
+                success: function(response) {
+                    row.find('.price-display').text(price).show();
+                    row.find('.price-edit').hide();
+                    row.find('.edit-price, .save-price, .cancel-edit').show();
+                }
+            });
+        });
+
+        // Cancel Edit
+        $('body').on('click', '.cancel-edit', function() {
+            var row = $(this).closest('tr');
+            row.find('.price-display').show();
+            row.find('.price-edit').hide();
+            row.find('.edit-price, .save-price, .cancel-edit').show();
+        });
+
+        // Remove Price
+        $('body').on('click', '.remove-price', function() {
+            var id = $(this).data('id');
+            if (confirm('Are you sure you want to remove this price?')) {
+                $.ajax({
+                    url: 'manage_stop_pricing.php',
+                    type: 'POST',
+                    data: { action: 'remove', id: id },
+                    success: function(response) {
+                        $(this).closest('tr').remove();
+                    }.bind(this)
+                });
+            }
+        });
+    });
+    </script>

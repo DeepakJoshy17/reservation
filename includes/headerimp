@@ -1,0 +1,88 @@
+<?php
+session_start();
+
+// Initialize $user_data to an empty array
+$user_data = [];
+
+// Check if user is logged in
+$is_logged_in = isset($_SESSION['user_id']);
+
+if ($is_logged_in) {
+    // User is logged in, fetch user data
+    $user_id = $_SESSION['user_id'];
+
+    // Include your database connection file
+    include_once "db_connection.php"; // Ensure this file is present and contains a valid connection
+
+    // Prepare and execute query to fetch user data
+    $sql_user = "SELECT * FROM Users WHERE user_id = ? AND role = 'User'";
+    $stmt_user = $conn->prepare($sql_user);
+
+    if ($stmt_user === false) {
+        // Log or display the error
+        die("Error preparing statement: " . $conn->error);
+    }
+
+    $stmt_user->bind_param("i", $user_id);
+
+    if (!$stmt_user->execute()) {
+        // Log or display the error
+        die("Error executing query: " . $stmt_user->error);
+    }
+
+    $result_user = $stmt_user->get_result();
+
+    // Check if user data exists
+    if ($result_user->num_rows > 0) {
+        // User data found, fetch and assign to $user_data
+        $user_data = $result_user->fetch_assoc();
+    }
+
+    $stmt_user->close();
+}
+?>
+
+<nav class="navbar navbar-expand-md tm-navbar" id="tmNav">
+    <div class="container">
+        <div class="tm-next">
+            <a href="#infinite" class="navbar-brand">Waterway</a>
+        </div>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="fas fa-bars navbar-toggler-icon"></i>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link tm-nav-link" href="index.php">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link tm-nav-link" href="index.php#whatwedo">What We Do</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link tm-nav-link" href="index.php#testimonials">Testimonials</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link tm-nav-link" href="index.php#gallery">Gallery</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link tm-nav-link" href="index.php#contact">Contact</a>
+                </li>
+                <?php if ($is_logged_in): ?>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-user-circle"></i> <?= $user_data['name'] ?? 'User' ?>
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="userMenu">
+                            <a class="dropdown-item" href="profile.php">Profile</a>
+                            <a class="dropdown-item" href="logout_user.php">Logout</a>
+                        </div>
+                    </li>
+                <?php else: ?>
+                    <li class="nav-item">
+                        <a class="nav-link tm-nav-link" href="loginuserhtml.php"><i class="fas fa-user-circle"></i> Login</a>
+                    </li>
+                <?php endif; ?>
+            </ul>
+        </div>
+    </div>
+</nav>

@@ -1,0 +1,117 @@
+// Fetch user's enquiries
+$sql_enquiries = "SELECT enquiry_id, name, message, created_at, response, response_created_at FROM Enquiries WHERE user_id = ?";
+$stmt_enquiries = $conn->prepare($sql_enquiries);
+
+if ($stmt_enquiries === false) {
+    error_log("SQL Prepare Error (Enquiries): " . $conn->error);
+    die("An error occurred while fetching your enquiries. Please try again later.");
+}
+
+$stmt_enquiries->bind_param("i", $user_id);
+
+if (!$stmt_enquiries->execute()) {
+    error_log("SQL Execute Error (Enquiries): " . $stmt_enquiries->error);
+    die("An error occurred while fetching your enquiries. Please try again later.");
+}
+
+$result_enquiries = $stmt_enquiries->get_result();  
+ 
+ 
+ /*enquiry style*/
+        .direct-chat-msg {
+        display: flex;
+        align-items: flex-start; /* Aligns the user icon and message vertically */
+        margin-bottom: 15px; /* Spacing between messages */
+    }
+
+    .direct-chat-infos {
+        flex: 1; /* Takes up available space */
+    }
+
+    .direct-chat-name {
+        font-weight: bold; /* Makes the username bold */
+    }
+
+    .direct-chat-text {
+        background-color: #f8f9fa; /* Light background for the message */
+        border-radius: 5px; /* Rounded corners */
+        padding: 10px; /* Padding for the message text */
+        margin-top: 5px; /* Space between name/timestamp and message */
+    }
+
+    .direct-chat-timestamp {
+        font-size: 0.9em; /* Slightly smaller font for the timestamp */
+        color: #6c757d; /* Muted color for the timestamp */
+    }
+
+    .direct-chat-msg i {
+        margin-right: 10px; /* Space between icon and name */
+        color: #007bff; /* Color for the user icon */
+    }
+
+    .response-text {
+        background-color: #d1ecf1; /* Light background for the response */
+        border-radius: 5px; /* Rounded corners */
+        padding: 10px; /* Padding for the response text */
+        margin-top: 5px; /* Space above the response */
+    }
+
+    .response-timestamp {
+        font-size: 0.9em; /* Smaller font for the response timestamp */
+        color: #6c757d; /* Muted color for the response timestamp */
+    }
+
+    .user-group {
+        margin-top: 20px;
+        border: 1px solid #007bff;
+        padding: 10px;
+        border-radius: 5px;
+        cursor: pointer; /* Cursor changes to pointer on hover */
+    }
+
+    .chat-details {
+        display: none; /* Hide chat details by default */
+        margin-top: 10px;
+    }
+
+    .notification {
+        font-weight: bold;
+        color: red; /* Highlight the notification count */
+    }
+   <div class="tab-pane fade" id="enquiries" role="tabpanel" aria-labelledby="enquiries-tab">
+    <div class="enquiries-section">
+        <?php if ($result_enquiries->num_rows > 0): ?>
+            <h4 class="section-title">Your Enquiries</h4>
+            <div class="table-responsive">
+                <?php while ($enquiry = $result_enquiries->fetch_assoc()): ?>
+                    <div class="direct-chat-msg">
+                        <i class="fas fa-user"></i> <!-- Replace with the actual user icon if necessary -->
+                        <div class="direct-chat-infos">
+                            <span class="direct-chat-name"><?= htmlspecialchars($enquiry['name']) ?></span>
+                            <span class="direct-chat-timestamp"><?= htmlspecialchars($enquiry['created_at']) ?></span>
+                            <div class="direct-chat-text">
+                                <?= htmlspecialchars($enquiry['message']) ?>
+                            </div>
+                        </div>
+                    </div>
+                    <?php if (!empty($enquiry['response'])): ?>
+                        <div class="direct-chat-msg">
+                            <i class="fas fa-user-shield"></i> <!-- Replace with the response icon if necessary -->
+                            <div class="direct-chat-infos">
+                                <span class="direct-chat-name">Admin</span>
+                                <span class="response-timestamp"><?= htmlspecialchars($enquiry['response_created_at']) ?></span>
+                                <div class="response-text">
+                                    <?= htmlspecialchars($enquiry['response']) ?>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                <?php endwhile; ?>
+            </div>
+        <?php else: ?>
+            <p class="alert alert-warning">No enquiries found.</p>
+        <?php endif; ?>
+    </div>
+</div>
+
+</div>

@@ -208,6 +208,42 @@
     <script src="js/easing.min.js"></script>
     <script src="js/jquery.singlePageNav.min.js"></script>     
     <script src="js/bootstrap.min.js"></script> 
+    <!-- <script>
+$(document).ready(function() {
+    $('#start_stop').change(function() {
+        const startStopId = $(this).val();
+
+        if (startStopId) {
+            $.ajax({
+                url: 'fetch_end_stop_no.php',
+                type: 'POST',
+                data: { start_stop_id: startStopId },
+                dataType: 'json',
+                success: function(response) {
+                    const endStopDropdown = $('#end_stop');
+                    endStopDropdown.empty();
+                    endStopDropdown.append('<option value="">-- Select End Stop --</option>');
+
+                    if (response.length > 0) {
+                        response.forEach(function(stop) {
+                            endStopDropdown.append(
+                                `<option value="${stop.stop_id}">${stop.location}</option>`
+                            );
+                        });
+                    } else {
+                        endStopDropdown.append('<option value="">No stops available</option>');
+                    }
+                },
+                error: function() {
+                    alert('An error occurred while fetching end stops.');
+                }
+            });
+        } else {
+            $('#end_stop').empty().append('<option value="">-- Select End Stop --</option>');
+        }
+    });
+});
+</script> -->
     <script>
     $(document).ready(function(){
         // Parallax and other existing scripts

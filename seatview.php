@@ -377,7 +377,7 @@ if ($boat_id && $schedule_id && $start_stop_id && $end_stop_id) {
 <body>
     <?php include 'includes/header.php'; ?>
     <br><br><br>
-    <div class="container mt-5">        <h2 class="mb-4">Seat View <?/*= htmlspecialchars($boat_id ?? '') */?></h2>
+    <div class="container mt-5">        <h2 class="tm-text-primary mb-4 tm">Seat View <?/*= htmlspecialchars($boat_id ?? '') */?></h2>
           <!-- Wrapper for boat and legend -->
         <div class="boat-legend-wrapper">
             <!-- Boat container -->

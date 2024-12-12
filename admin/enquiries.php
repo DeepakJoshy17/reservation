@@ -41,65 +41,85 @@ foreach ($enquiries as $enquiry) {
 ?>
 
 <style>
-    .direct-chat-msg {
-        display: flex;
-        align-items: flex-start; /* Aligns the user icon and message vertically */
-        margin-bottom: 15px; /* Spacing between messages */
-    }
-
-    .direct-chat-infos {
-        flex: 1; /* Takes up available space */
-    }
-
-    .direct-chat-name {
-        font-weight: bold; /* Makes the username bold */
-    }
-
-    .direct-chat-text {
-        background-color: #f8f9fa; /* Light background for the message */
-        border-radius: 5px; /* Rounded corners */
-        padding: 10px; /* Padding for the message text */
-        margin-top: 5px; /* Space between name/timestamp and message */
-    }
-
-    .direct-chat-timestamp {
-        font-size: 0.9em; /* Slightly smaller font for the timestamp */
-        color: #6c757d; /* Muted color for the timestamp */
-    }
-
-    .direct-chat-msg i {
-        margin-right: 10px; /* Space between icon and name */
-        color: #007bff; /* Color for the user icon */
-    }
-
-    .response-text {
-        background-color: #d1ecf1; /* Light background for the response */
-        border-radius: 5px; /* Rounded corners */
-        padding: 10px; /* Padding for the response text */
-        margin-top: 5px; /* Space above the response */
-    }
-
-    .response-timestamp {
-        font-size: 0.9em; /* Smaller font for the response timestamp */
-        color: #6c757d; /* Muted color for the response timestamp */
+    .chat-container {
+        margin-top: 20px;
+        border: 1px solid #3377AA;
+        padding: 15px;
+        border-radius: 10px;
+        background-color: #f9f9f9;
     }
 
     .user-group {
-        margin-top: 20px;
-        border: 1px solid #007bff;
+        cursor: pointer;
         padding: 10px;
+        border-bottom: 1px solid #ddd;
+        background-color: #3377AA;
+        color: #fff;
+        font-weight: bold;
         border-radius: 5px;
-        cursor: pointer; /* Cursor changes to pointer on hover */
+        transition: background-color 0.3s;
+    }
+
+    .user-group:hover {
+        background-color: #0056b3;
     }
 
     .chat-details {
-        display: none; /* Hide chat details by default */
+        display: none;
+        margin-top: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 10px;
+        background-color: #fff;
+    }
+
+    .direct-chat-msg {
+        margin-bottom: 15px;
+        display: flex;
+        align-items: flex-start;
+    }
+
+    .direct-chat-msg .user-icon {
+        margin-right: 10px;
+    }
+
+    .user-icon i {
+        font-size: 24px;
+        color: #3377AA;
+    }
+
+    .direct-chat-text,
+    .response-text {
+        max-width: 70%;
+        padding: 10px;
+        border-radius: 10px;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    .direct-chat-text {
+        background-color: #f1f1f1;
+        color: #333;
+    }
+
+    .response-text {
+        background-color: #d1ecf1;
+        color: #0c5460;
+        align-self: flex-end;
+    }
+
+    .chat-timestamp {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+
+    textarea {
         margin-top: 10px;
     }
 
-    .notification {
-        font-weight: bold;
-        color: red; /* Highlight the notification count */
+    .btn {
+        margin-top: 5px;
     }
 </style>
 
@@ -109,96 +129,101 @@ foreach ($enquiries as $enquiry) {
 
         <!-- Enquiries for users with user_id -->
         <?php if (!empty($grouped_enquiries['users'])): ?>
-          
             <?php foreach ($grouped_enquiries['users'] as $user_name => $user_enquiries): ?>
                 <?php
-                    // Count enquiries with response_status = 0
                     $unanswered_count = count(array_filter($user_enquiries, function($enquiry) {
                         return $enquiry['response_status'] == 0;
                     }));
                 ?>
-                <div class="user-group" onclick="toggleChatDetails('user-<?= htmlspecialchars($user_name) ?>')">
-                    <p>* <?= htmlspecialchars($user_name) ?> 
-                        <span class="notification">(<?= $unanswered_count ?> enquiries)</span>
-                </p>
-                </div>
-                <div id="user-<?= htmlspecialchars($user_name) ?>" class="chat-details">
-                    <?php foreach ($user_enquiries as $enquiry): ?>
-                        <div class="direct-chat-msg">
-                            <div class="direct-chat-infos clearfix">
-                                <span class="direct-chat-name float-left">
-                                    <i class="fas fa-user-circle"></i> <?= htmlspecialchars($enquiry['name']) ?>
-                                </span>
-                                <span class="direct-chat-timestamp float-right"><?= htmlspecialchars($enquiry['created_at']) ?></span>
+                <div class="chat-container">
+                    <div class="user-group" onclick="toggleChatDetails('user-<?= htmlspecialchars($user_name) ?>')">
+                        <?= htmlspecialchars($user_name) ?>
+                        <span class="notification">(<?= $unanswered_count ?> enquiries pending)</span>
+                    </div>
+
+                    <div id="user-<?= htmlspecialchars($user_name) ?>" class="chat-details">
+                        <?php foreach ($user_enquiries as $enquiry): ?>
+                            <div class="direct-chat-msg">
+                                <div class="user-icon">
+                                    <i class="fas fa-user-circle"></i>
+                                </div>
+                                <div>
+                                    <div class="direct-chat-text">
+                                        <?= htmlspecialchars($enquiry['message']) ?>
+                                    </div>
+                                    <div class="chat-timestamp">
+                                        <?= htmlspecialchars($enquiry['created_at']) ?>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="direct-chat-text">
-                                <?= htmlspecialchars($enquiry['message']) ?>
-                            </div>
-                            <!-- Display response if available -->
+
                             <?php if (!empty($enquiry['response'])): ?>
-                                <div class="response-text">
-                                    <?= htmlspecialchars($enquiry['response']) ?>
-                                    <div class="response-timestamp float-right"><?= htmlspecialchars($enquiry['response_created_at']) ?></div>
+                                <div class="direct-chat-msg">
+                                    <div class="response-text">
+                                        <?= htmlspecialchars($enquiry['response']) ?>
+                                    </div><br><br><br>
+                                    <div class="chat-timestamp">
+                                        <?= htmlspecialchars($enquiry['response_created_at']) ?>
+                                    </div>
                                 </div>
                             <?php endif; ?>
-                        </div>
 
-                        <!-- Only show response form if no response has been sent -->
-                        <?php if ($enquiry['response_status'] == 0): ?>
-                            <form method="post" action="">
-                                <input type="hidden" name="enquiry_id" value="<?= htmlspecialchars($enquiry['enquiry_id']) ?>">
-                                <div class="form-group">
-                                    <label for="response">Response:</label>
+                            <?php if ($enquiry['response_status'] == 0): ?>
+                                <form method="post" action="">
+                                    <input type="hidden" name="enquiry_id" value="<?= htmlspecialchars($enquiry['enquiry_id']) ?>">
                                     <textarea class="form-control" name="response" rows="2" required></textarea>
-                                </div>
-                                <button type="submit" class="btn btn-primary">Send Response</button>
-                            </form>
-                        <?php else: ?>
-                            <p class="text-success">Response has already been sent.</p>
-                        <?php endif; ?>
-                        <hr>
-                    <?php endforeach; ?>
+                                    <button type="submit" class="btn btn-primary">Send Response</button>
+                                </form>
+                            <?php else: ?>
+                                <p class="text-success">Response has already been sent.</p>
+                            <?php endif; ?>
+
+                            <hr>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
             <?php endforeach; ?>
         <?php endif; ?>
 
-        <!-- Common enquiries without user_id -->
         <?php if (!empty($grouped_enquiries['common'])): ?>
             <h2>Common Enquiries</h2>
             <?php foreach ($grouped_enquiries['common'] as $enquiry): ?>
-                <div class="direct-chat-msg">
-                    <div class="direct-chat-infos clearfix">
-                        <span class="direct-chat-name float-left">
-                            <i class="fas fa-user-circle"></i> <?= htmlspecialchars($enquiry['email']) ?> (Common)
-                        </span>
-                        <span class="direct-chat-timestamp float-right"><?= htmlspecialchars($enquiry['created_at']) ?></span>
+                <div class="chat-container">
+                    <div class="direct-chat-msg">
+                        <div class="user-icon">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <div>
+                            <div class="direct-chat-text">
+                                <?= htmlspecialchars($enquiry['message']) ?>
+                            </div>
+                            <div class="chat-timestamp">
+                                <?= htmlspecialchars($enquiry['created_at']) ?>
+                            </div>
+                        </div>
                     </div>
-                    <div class="direct-chat-text">
-                        <?= htmlspecialchars($enquiry['message']) ?>
-                    </div>
-                    <!-- Display response if available -->
+
                     <?php if (!empty($enquiry['response'])): ?>
-                        <div class="response-text">
-                            <?= htmlspecialchars($enquiry['response']) ?>
-                            <div class="response-timestamp float-right"><?= htmlspecialchars($enquiry['response_created_at']) ?></div>
+                        <div class="direct-chat-msg">
+                            <div class="response-text">
+                                <?= htmlspecialchars($enquiry['response']) ?>
+                            </div><br><br><br>
+                            <div class="chat-timestamp">
+                                <?= htmlspecialchars($enquiry['response_created_at']) ?>
+                            </div>
                         </div>
                     <?php endif; ?>
-                </div>
 
-                <!-- Only show response form if no response has been sent -->
-                <?php if ($enquiry['response_status'] == 0): ?>
-                    <form method="post" action="">
-                        <input type="hidden" name="enquiry_id" value="<?= htmlspecialchars($enquiry['enquiry_id']) ?>">
-                        <div class="form-group">
-                            <label for="response">Response:</label>
+                    <?php if ($enquiry['response_status'] == 0): ?>
+                        <form method="post" action="">
+                            <input type="hidden" name="enquiry_id" value="<?= htmlspecialchars($enquiry['enquiry_id']) ?>">
                             <textarea class="form-control" name="response" rows="2" required></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Send Response</button>
-                    </form>
-                <?php else: ?>
-                    <p class="text-success">Response has already been sent.</p>
-                <?php endif; ?>
-                <hr>
+                            <button type="submit" class="btn btn-primary">Send Response</button>
+                        </form>
+                    <?php else: ?>
+                        <p class="text-success">Response has already been sent.</p>
+                    <?php endif; ?>
+                </div>
             <?php endforeach; ?>
         <?php endif; ?>
 
@@ -207,17 +232,10 @@ foreach ($enquiries as $enquiry) {
         <?php endif; ?>
     </div>
 </div>
+
 <script>
     function toggleChatDetails(userId) {
         var chatDetails = document.getElementById(userId);
-        if (chatDetails.style.display === "none" || chatDetails.style.display === "") {
-            chatDetails.style.display = "block";
-        } else {
-            chatDetails.style.display = "none";
-        }
+        chatDetails.style.display = chatDetails.style.display === "block" ? "none" : "block";
     }
 </script>
-
-<?php include 'footer.php'; ?>
-
-

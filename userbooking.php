@@ -19,7 +19,7 @@ $end_stop_id = '';
 </head>
 <br><br>
 <div class="container mt-5">
-    <h1 class="mb-4">Book Your Seats</h1>
+    <h2 class="tm-text-primary mb-4 tm-section-title">Book Your Seats</h2>
 
     <!-- Search Form -->
     <form id="search-boats-form" method="post" action="search_boats_ajax.php" class="mb-4">

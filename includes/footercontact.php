@@ -43,6 +43,7 @@ if (isset($_SESSION['user_id'])) {
         <div class="text-center col-12">
             <h2 class="tm-section-title mb-4">Contact Us</h2>
             <p class="mb-5">If you have any concerns or complaints regarding our services, don't hesitate to contact us. Your satisfaction is our priority, and we strive to make things right.</p>
+            <div id="responseMessage" class="mb-5"></div> 
         </div>
         <div class="col-sm-12 col-md-6">
           <form id="enquiryForm">
@@ -51,7 +52,7 @@ if (isset($_SESSION['user_id'])) {
             <textarea id="message" name="message" rows="8" placeholder="Message" class="tm-input" required></textarea>
             <button type="submit" class="btn tm-btn-submit">Submit</button>
           </form>
-          <div id="responseMessage" class="mt-3"></div> <!-- To display messages -->
+          <!-- To display messages -->
         </div>
         <div class="col-sm-12 col-md-6">
           <!-- Contact Details -->
@@ -96,14 +97,14 @@ $(document).ready(function() {
             dataType: 'json',
             success: function(response) {
                 if (response.status === 'success') {
-                    $('#responseMessage').html('<div class="alert alert-success color=white">' + response.message + '</div>');
+                    $('#responseMessage').html('<div>' + response.message + '</div>');
                     $('#enquiryForm')[0].reset(); // Reset the form after successful submission
                 } else {
-                    $('#responseMessage').html('<div class="alert alert-danger">' + response.message + '</div>');
+                    $('#responseMessage').html('<div>' + response.message + '</div>');
                 }
             },
             error: function() {
-                $('#responseMessage').html('<div class="alert alert-danger">An error occurred while submitting your enquiry. Please try again.</div>');
+                $('#responseMessage').html('<div>An error occurred while submitting your enquiry. Please try again.</div>');
             }
         });
     });

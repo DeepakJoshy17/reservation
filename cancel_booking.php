@@ -65,7 +65,7 @@ $stmt->close();
         }
 
         .boat-name {
-            color: lightgrey;
+            color: grey;
             padding: 5px;
             margin-top: 20px;
             border-radius: 5px;
@@ -93,7 +93,7 @@ $stmt->close();
 
         .seat:hover {
             transform: translateY(-2px); /* Lift effect on hover */
-            background-color: #202428; /* Original hover color */
+            background-color:grey; /* Original hover color */
             color: white;
             font-weight: bold;
             box-shadow: -8px -8px 16px rgba(0, 0, 0, 0.5); /* Increased shadow on hover */
@@ -117,6 +117,7 @@ $stmt->close();
             box-shadow: -6px -6px 12px rgba(0, 0, 0, 0.4); /* Shadow */
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
+    
 
         .btn:hover {
             transform: translateY(-2px); /* Lift effect on hover */
@@ -169,7 +170,7 @@ $stmt->close();
         <input type="hidden" name="booking_ids" id="booking_ids" value="">
         
         <div class="text-center" style="margin-top: 20px;">
-            <button type="submit" class="btn btn-danger" id="submitBtn">Cancel Selected Bookings</button>
+            <button type="submit" class="btn btn-danger" id="submitBtn">Cancel Seats</button>
         </div>
     </form>
 </div>

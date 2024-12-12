@@ -159,7 +159,7 @@ $conn->close();
         }
         /* Add specific styles for canvas to control its size */
         canvas {
-            max-width: 800px; /* Set max width for medium size */
+            width: 1500px; /* Set max width for medium size */
             height: 100px; /* Set height for medium size */
         }
 

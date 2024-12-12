@@ -352,7 +352,7 @@ $result_enquiries = $stmt_enquiries->get_result();
                                 <input type="password" class="form-control" id="confirm_password" name="confirm_password">
                             </div>
                         </div>
-                        <button type="submit" name="update_profile" class="btn btn-primary">Update Profile</button>
+                        <button type="submit" name="update_profile" class="btn btn-info btn-sm mt-2">Update Profile</button>
                     </form>
                 </div>
             </div>

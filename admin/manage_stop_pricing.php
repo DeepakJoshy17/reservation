@@ -23,9 +23,9 @@ function log_admin_action($admin_id, $action, $description) {
     $stmt->close();
 }
 
-// Function to calculate and insert prices for a specific route
-function calculate_and_insert_prices($route_id) {
+function calculate_and_insert_prices($route_id, $price_per_km) {
     global $conn;
+    
     // Delete existing prices for the route
     $delete_query = "DELETE FROM Stop_Pricing WHERE start_stop_id IN (SELECT stop_id FROM Route_Stops WHERE route_id = ?)";
     $stmt = $conn->prepare($delete_query);
@@ -33,7 +33,7 @@ function calculate_and_insert_prices($route_id) {
     $stmt->execute();
     $stmt->close();
 
-    // Calculate and insert new prices
+    // Calculate and insert new prices for the same route
     $query = "SELECT rs1.stop_id AS start_stop_id, rs1.km AS start_km, rs2.stop_id AS end_stop_id, rs2.km AS end_km 
               FROM Route_Stops rs1 
               JOIN Route_Stops rs2 ON rs1.stop_id < rs2.stop_id
@@ -45,22 +45,40 @@ function calculate_and_insert_prices($route_id) {
 
     while ($row = $result->fetch_assoc()) {
         $km_difference = abs($row['end_km'] - $row['start_km']);
-        $price = $km_difference * 5; // Assuming 5 is the price per km
+        // Skip if the difference is zero or if the start and end stop are the same
+        if ($km_difference == 0 || $row['start_stop_id'] == $row['end_stop_id']) {
+            continue;
+        }
+        $price = $km_difference * $price_per_km; // Use provided price per km
         
-        // Insert pricing
-        $insert_query = "INSERT INTO Stop_Pricing (start_stop_id, end_stop_id, price) VALUES (?, ?, ?)";
-        $stmt_insert = $conn->prepare($insert_query);
-        $stmt_insert->bind_param("iid", $row['start_stop_id'], $row['end_stop_id'], $price);
-        $stmt_insert->execute();
-        $stmt_insert->close();
+        // Ensure start_stop_id and end_stop_id are part of the same route
+        $check_route_query = "SELECT COUNT(*) AS count FROM Route_Stops WHERE stop_id IN (?, ?) AND route_id = ?";
+        $stmt_check_route = $conn->prepare($check_route_query);
+        $stmt_check_route->bind_param("iii", $row['start_stop_id'], $row['end_stop_id'], $route_id);
+        $stmt_check_route->execute();
+        $check_result = $stmt_check_route->get_result();
+        $check_row = $check_result->fetch_assoc();
+
+        if ($check_row['count'] == 2) {
+            // Insert pricing only if both stops are part of the same route
+            $insert_query = "INSERT INTO Stop_Pricing (start_stop_id, end_stop_id, price) VALUES (?, ?, ?)";
+            $stmt_insert = $conn->prepare($insert_query);
+            $stmt_insert->bind_param("iid", $row['start_stop_id'], $row['end_stop_id'], $price);
+            $stmt_insert->execute();
+            $stmt_insert->close();
+        }
+
+        $stmt_check_route->close();
     }
     $stmt->close();
 }
 
+
 // Handle form submission for updating prices for a selected route
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['route_id'])) {
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['route_id']) && isset($_POST['price_per_km'])) {
     $route_id = $_POST['route_id'];
-    calculate_and_insert_prices($route_id);
+    $price_per_km = (float)$_POST['price_per_km']; // Cast price to float
+    calculate_and_insert_prices($route_id, $price_per_km);
     log_admin_action($_SESSION['admin_id'], 'Update Stop Pricing', "Updated prices for route ID: $route_id");
     $message = "<div class='alert alert-success'>Prices updated successfully for route ID: $route_id.</div>";
 }
@@ -72,6 +90,7 @@ $routes = [];
 while ($row = $routes_result->fetch_assoc()) {
     $routes[] = $row;
 }
+
 // Function to manage stop pricing
 function manage_stop_pricing($action) {
     global $conn;
@@ -174,103 +193,93 @@ while ($row = $stops_result->fetch_assoc()) {
     $stops[] = $row;
 }
 
-// Fetch all routes
-$routes_query = "SELECT route_id, route_name FROM Routes ORDER BY route_name";
-$routes_result = $conn->query($routes_query);
-$routes = [];
-while ($row = $routes_result->fetch_assoc()) {
-    $routes[] = $row;
-}
 ?>
 
 <div class="content-wrapper">
-    <div class="container mt-5">
-        <h1 class="mb-4">Manage Stop Pricing</h1>
-
-        <?php if (isset($message)): ?>
-            <div class="alert alert-info"><?php echo $message; ?></div>
-        <?php endif; ?>
-
-        <!-- Update Price for Selected Route -->
+    <div class=container mt-5">
+    <h2 class="mb-4">Manage Stop Pricing</h2>
+    <?php if ($message) echo $message; ?>
+    
+    
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h2 class="card-title">Update Prices for Route</h2>
+                    <form action="manage_stop_pricing.php" method="post">
+                        <div class="mb-3">
+                            <label for="route_id" class="form-label"><br><br>Select Route:</label>
+                            <select id="route_id" name="route_id" class="form-select" required>
+                                <option value="">Select a route</option>
+                                <?php foreach ($routes as $route): ?>
+                                    <option value="<?php echo $route['route_id']; ?>"><?php echo $route['route_name']; ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="price_per_km" class="form-label">Price per Km (Default: 5 rupees):</label>
+                            <input type="number" step="0.01" name="price_per_km" value="5" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Update Prices</button>
+                    </form>
+                </div>
+            </div>
+        </div>
         <div class="card mb-4">
-            <div class="card-body">
-                <h2 class="card-title">Update Prices for Route</h2>
-                <form action="manage_stop_pricing.php" method="post">
-                    <div class="mb-3">
-                        <label for="route_id" class="form-label"><br><br>Select Route:</label>
-                        <select id="route_id" name="route_id" class="form-select" required>
-                            <option value="">Select a route</option>
-                            <?php foreach ($routes as $route): ?>
-                                <option value="<?php echo $route['route_id']; ?>"><?php echo $route['route_name']; ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Update Prices</button>
-                </form>
-            </div>
-        </div>
-    </div>
-
- <div class="card mb-4">
-            <div class="card-body">
-                <h2 class="card-title">Price List</h2><br><br>
-                <form action="" method="GET" class="mb-4">
-                    <div class="row">
-                        <div class="col">
-                            <input type="text" name="start_stop" placeholder="Start Stop" class="form-control">
+                <div class="card-body">
+                    <h2 class="card-title">Price List</h2><br><br>
+                    <form action="" method="GET" class="mb-4">
+                        <div class="row">
+                            <div class="col">
+                                <input type="text" name="start_stop" placeholder="Start Stop" class="form-control">
+                            </div>
+                            <div class="col">
+                                <input type="text" name="end_stop" placeholder="End Stop" class="form-control">
+                            </div>
+                            <div class="col">
+                                <input type="text" name="price" placeholder="Price" class="form-control">
+                            </div>
+                            <div class="col">
+                                <button type="submit" class="btn btn-primary">Search</button>
+                            </div>
                         </div>
-                        <div class="col">
-                            <input type="text" name="end_stop" placeholder="End Stop" class="form-control">
-                        </div>
-                        <div class="col">
-                            <input type="text" name="price" placeholder="Price" class="form-control">
-                        </div>
-                        <div class="col">
-                            <button type="submit" class="btn btn-success">Search</button>
-                        </div>
-                    </div>
-                </form>
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Start Stop</th>
-                            <th>End Stop</th>
-                            <th>Price</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php while ($row = $search_result->fetch_assoc()): ?>
+                    </form>
+                    <table class="table table-striped">
+                        <thead>
                             <tr>
-                                <td><?php echo $row['id']; ?></td>
-                                <td><?php echo $row['start_location']; ?></td>
-                                <td><?php echo $row['end_location']; ?></td>
-                                <td><?php echo $row['price']; ?></td>
-                                <td>
-                                    <form action="manage_stop_pricing.php" method="POST" class="d-inline">
-                                        <input type="hidden" name="action" value="edit">
-                                        <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
-                                        <input type="number" name="price" step="0.01" value="<?php echo $row['price']; ?>" required>
-                                        <button type="submit" class="btn btn-warning btn-sm">Edit</button>
-                                    </form>
-                                    <form action="manage_stop_pricing.php" method="POST" class="d-inline">
-                                        <input type="hidden" name="action" value="remove">
-                                        <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
-                                        <button type="submit" class="btn btn-danger btn-sm">Remove</button>
-                                    </form>
-                                </td>
+                                <th>ID</th>
+                                <th>Start Stop</th>
+                                <th>End Stop</th>
+                                <th>Price</th>
+                                <th>Actions</th>
                             </tr>
-                        <?php endwhile; ?>
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            <?php while ($row = $search_result->fetch_assoc()): ?>
+                                <tr>
+                                    <td><?php echo $row['id']; ?></td>
+                                    <td><?php echo $row['start_location']; ?></td>
+                                    <td><?php echo $row['end_location']; ?></td>
+                                    <td><?php echo $row['price']; ?></td>
+                                    <td>
+                                        <form action="manage_stop_pricing.php" method="POST" class="d-inline">
+                                            <input type="hidden" name="action" value="edit">
+                                            <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
+                                            <input type="number" name="price" step="0.01" value="<?php echo $row['price']; ?>" required>
+                                            <button type="submit" class="btn btn-warning btn-sm">Edit</button>
+                                        </form>
+                                        <form action="manage_stop_pricing.php" method="POST" class="d-inline">
+                                            <input type="hidden" name="action" value="remove">
+                                            <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
+                                            <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <?php endwhile; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
-</div>
 </div>
 
 <?php include 'footer.php'; ?>
-
-
-

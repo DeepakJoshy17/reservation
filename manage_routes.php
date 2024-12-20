@@ -17,11 +17,12 @@ function manage_route($action) {
         $route_name = $_POST['route_name'] ?? null;
         $start_location = $_POST['start_location'] ?? null;
         $end_location = $_POST['end_location'] ?? null;
+        $is_return = isset($_POST['is_return']) ? 1 : 0;
 
         if ($action == 'add') {
-            $query = "INSERT INTO Routes (route_name, start_location, end_location) VALUES (?, ?, ?)";
+            $query = "INSERT INTO Routes (route_name, start_location, end_location, is_return) VALUES (?, ?, ?, ?)";
             $stmt = $conn->prepare($query);
-            $stmt->bind_param("sss", $route_name, $start_location, $end_location);
+            $stmt->bind_param("sssi", $route_name, $start_location, $end_location, $is_return);
             if ($stmt->execute()) {
                 echo "<div class='alert alert-success'>Route added successfully.</div>";
             } else {
@@ -30,9 +31,9 @@ function manage_route($action) {
             $stmt->close();
         } elseif ($action == 'edit') {
             $route_id = $_POST['route_id'];
-            $query = "UPDATE Routes SET route_name = ?, start_location = ?, end_location = ? WHERE route_id = ?";
+            $query = "UPDATE Routes SET route_name = ?, start_location = ?, end_location = ?, is_return = ? WHERE route_id = ?";
             $stmt = $conn->prepare($query);
-            $stmt->bind_param("sssi", $route_name, $start_location, $end_location, $route_id);
+            $stmt->bind_param("sssii", $route_name, $start_location, $end_location, $is_return, $route_id);
             if ($stmt->execute()) {
                 echo "<div class='alert alert-success'>Route updated successfully.</div>";
             } else {
@@ -56,7 +57,7 @@ function manage_route($action) {
 
 // Fetch all routes for the dropdown
 $routes = [];
-$query = "SELECT route_id, route_name, start_location, end_location FROM Routes";
+$query = "SELECT route_id, route_name, start_location, end_location, is_return FROM Routes";
 $result = $conn->query($query);
 while ($row = $result->fetch_assoc()) {
     $routes[] = $row;
@@ -104,6 +105,10 @@ manage_route($action);
                         <label for="end_location" class="form-label">End Location:</label>
                         <input type="text" id="end_location" name="end_location" class="form-control" required>
                     </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="is_return" name="is_return">
+                        <label class="form-check-label" for="is_return">Is Return Route</label>
+                    </div>
                     <button type="submit" class="btn btn-primary">Add Route</button>
                 </form>
             </div>
@@ -135,6 +140,10 @@ manage_route($action);
                     <div class="mb-3">
                         <label for="end_location_edit" class="form-label">End Location:</label>
                         <input type="text" id="end_location_edit" name="end_location" class="form-control" required>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="is_return_edit" name="is_return">
+                        <label class="form-check-label" for="is_return_edit">Is Return Route</label>
                     </div>
                     <button type="submit" class="btn btn-warning">Update Route</button>
                 </form>
@@ -180,6 +189,7 @@ manage_route($action);
                 document.getElementById('route_name_edit').value = selectedRoute.route_name;
                 document.getElementById('start_location_edit').value = selectedRoute.start_location;
                 document.getElementById('end_location_edit').value = selectedRoute.end_location;
+                document.getElementById('is_return_edit').checked = selectedRoute.is_return == 1;
             }
         }
     </script>
@@ -189,4 +199,3 @@ manage_route($action);
     <br><br><br>
 </body>
 </html>
-

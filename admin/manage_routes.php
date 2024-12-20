@@ -45,11 +45,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             log_admin_action($admin_id, "Delete Route", "Deleted Route ID: $route_id");
         }
     } elseif (isset($_POST['add_route'])) {
+        // Add original route
         $query = "INSERT INTO Routes (route_name, start_location, end_location) VALUES (?, ?, ?)";
         $stmt = $conn->prepare($query);
         $stmt->bind_param("sss", $route_name, $start_location, $end_location);
         if ($stmt->execute()) {
+            $new_route_id = $stmt->insert_id;
             log_admin_action($admin_id, "Add Route", "Added Route: $route_name");
+
+            // Automatically add reverse route with swapped locations
+            $return_route_name = "$end_location - $start_location";
+            $return_start_location = $end_location;
+            $return_end_location = $start_location;
+            $query = "INSERT INTO Routes (route_name, start_location, end_location) VALUES (?, ?, ?)";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("sss", $return_route_name, $return_start_location, $return_end_location);
+            if ($stmt->execute()) {
+                $return_route_id = $stmt->insert_id;
+                log_admin_action($admin_id, "Add Return Route", "Added Return Route: $return_route_name");
+            }
         }
     }
 }
@@ -167,6 +181,3 @@ while ($row = $result->fetch_assoc()) {
 </div>
 
 <?php include 'footer.php'; ?>
-
-
-

@@ -207,7 +207,8 @@
     <script src="magnific-popup/jquery.magnific-popup.min.js"></script>
     <script src="js/easing.min.js"></script>
     <script src="js/jquery.singlePageNav.min.js"></script>     
-    <script src="js/bootstrap.min.js"></script> 
+    <script src="js/bootstrap.min.js"></script>
+     
     <!-- <script>
 $(document).ready(function() {
     $('#start_stop').change(function() {
